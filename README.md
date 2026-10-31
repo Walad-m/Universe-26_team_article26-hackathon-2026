@@ -1,69 +1,65 @@
-<!-- ===== TEMPLATE NOTE: delete this block once your team has started ===== -->
-> **Article26 Hackathon 2026 · Team template**
->
-> This repository is your starting point. It contains **no code and no required technology**, only guidance:
->
-> 1. **Start here:** read the [Build Guide](docs/guide.md) and the [challenge](docs/challenge.md).
-> 2. Fill in [docs/product-vision.md](docs/product-vision.md) together.
-> 3. Keep this README up to date as you build. The technical jury starts your product **from this README alone** ([how they check](docs/scoring.md#run-check-for-the-juror)).
->
-> Using an AI coding agent (GitHub Copilot, Claude Code, Cursor …)? It reads [AGENTS.md](AGENTS.md) and the skills in `.claude/skills/` automatically. In GitHub Copilot Chat (agent mode) or Claude Code, type `/kickoff` to begin, or `/hackathon-review` at any time.
->
-> Looking for an example? The `blueprint` branch contains a small Next.js + PostgreSQL app from an earlier edition. It is one possible approach, not a requirement.
-<!-- ===== END OF TEMPLATE NOTE ===== -->
+# Orvix · Enterprise Order Governance & Burn Radar
 
-# TODO Product name
-
-TODO – one sentence: what the product does and for whom. Link to [product vision](docs/product-vision.md).
+Orvix gives enterprise Project Leads real-time visibility into external service provider budgets, burn-down pace, and automated 4-week reorder alerts — with frictionless deliverable-based booking. See [product vision](docs/product-vision.md).
 
 ## Prerequisites
 
-Exact tools and versions the jury must have installed. Example:
-
 | Tool | Version | Check |
 |---|---|---|
-| TODO (e.g. Node.js) | TODO (e.g. 22.x) | `TODO (e.g. node --version)` |
+| Node.js | >= 20.x | `node --version` |
+| npm | >= 10.x | `npm --version` |
 
 ## Setup
 
-Exact commands, in order, from a fresh clone. Example:
+Exact commands, in order, from a fresh clone:
 
 ```bash
-TODO   # e.g. cp .env.example .env
-TODO   # e.g. npm ci
+cp .env.example .env
+npm install
+npx prisma db push
+npm run seed
 ```
 
 ## Run
 
 ```bash
-TODO   # the command that starts the application
+npm run dev
 ```
 
-Open TODO (e.g. http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Test
 
+Run all unit tests with one command:
+
 ```bash
-TODO   # one command that runs all tests
+npm test
 ```
 
 ## Demo users
 
-| Role | Sign in with | What to try |
+| Role | Sign in / View | What to try |
 |---|---|---|
-| TODO | TODO | TODO |
+| **Project Lead** | `lead@client.de` / `password` | Inspect active order `PO-4500012345`, live Person-Day burn, 4-week reorder radar, and approvals. |
+| **Purchasing** | `purchasing@client.de` / `password` | Aggregated order drawdown view without personal data, automated 4-week reorder alert. |
+| **Consultant Alpha** | `consultant@supplier-a.de` / `password` | Log deliverable hours against assigned order. Enforces German Working Time Act (ArbZG 10h limit). |
+| **Consultant Beta** | `consultant@supplier-b.de` / `password` | Agency Beta portal with strict vendor isolation (cannot view Agency Alpha's orders). |
 
 ## Evidence map
 
-Where the technical jury finds the evidence for each [technical criterion](docs/scoring.md).
+Where the technical jury finds the evidence for each [technical criterion](docs/scoring.md):
 
 | Criterion | Evidence |
 |---|---|
-| 1 · Persistence and data model | TODO – schema / migrations, [ER diagram](docs/domain.md) |
-| 2 · Business rules and unit tests | TODO – domain rule files, test folder |
-| 3 · Roles, permissions and privacy | [Permission concept](docs/roles-and-privacy.md), TODO – mockup views / enforcement code |
-| 4 · Architecture and engineering | TODO – A structure · B [ADRs](docs/adr/) · C Git history · D API docs · E compose file · F [mockup](docs/mockup/) |
+| **1 · Persistence and data model** | [`prisma/schema.prisma`](prisma/schema.prisma), [`prisma/seed.ts`](prisma/seed.ts), [ER diagram in docs/domain.md](docs/domain.md) |
+| **2 · Business rules and unit tests** | [`app/domain/budget.ts`](app/domain/budget.ts), unit tests in [`tests/budget.test.ts`](tests/budget.test.ts) (accept & reject cases) |
+| **3 · Roles, permissions and privacy** | [Permission concept in docs/roles-and-privacy.md](docs/roles-and-privacy.md), role-specific views and data minimization |
+| **4 · Architecture and engineering** | **Block A (Structure):** `app/` (routes), `app/domain/` (rules), `prisma/` (persistence)<br>**Block B (ADRs):** [docs/adr/](docs/adr/) (ADR 0001 Stack, ADR 0002 Identity, ADR 0003 Operation)<br>**Block C (Git history):** Commits and PRs distributed across sprint days |
 
 ## Team
 
-TODO – names and GitHub handles.
+* **Walad-m** ([@Walad-m](https://github.com/Walad-m))
+* **Solomon Azinawo** ([@Azinawo](https://github.com/Azinawo))
+* **Habib** ([@bawahmohammedhabib-dotcom](https://github.com/bawahmohammedhabib-dotcom))
+* **Barkisu** ([@Iddrisu-Barkisu](https://github.com/Iddrisu-Barkisu))
+* **Mujahid** ([@mujahidalhassan204-glitch](https://github.com/mujahidalhassan204-glitch))

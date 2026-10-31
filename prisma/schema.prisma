@@ -1,0 +1,80 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Company {
+  id        String          @id @default(cuid())
+  name      String
+  type      String          // "client" or "supplier"
+  users     User[]
+  orders    PurchaseOrder[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model User {
+  id          String            @id @default(cuid())
+  name        String
+  email       String            @unique
+  password    String            @default("password")
+  role        String            // "project_lead", "purchasing", "consultant"
+  companyId   String?
+  company     Company?          @relation(fields: [companyId], references: [id])
+  assignments OrderAssignment[]
+  bookings    Booking[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PurchaseOrder {
+  id               String            @id @default(cuid())
+  orderNumber      String            @unique // e.g. "PO-4500012345"
+  title            String
+  description      String?
+  totalBudgetDays  Float             // e.g. 140.0 Person-Days
+  dailyHoursPerDay Float             @default(8.0) // Configurable conversion (default: 8.0h = 1 PD)
+  maxDailyHours    Float             @default(10.0) // Configurable ArbZG limit (default: 10.0h)
+  reorderLeadWeeks Int               @default(4) // Configurable warning window (default: 4 weeks)
+  federalState     String            @default("BY") // German state for holidays (default: Bavaria)
+  startDate        DateTime
+  endDate          DateTime
+  status           String            @default("active") // "active", "closed"
+  companyId        String            // Assigned supplier agency
+  company          Company           @relation(fields: [companyId], references: [id])
+  assignments      OrderAssignment[]
+  bookings         Booking[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model OrderAssignment {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  userId          String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@unique([purchaseOrderId, userId])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  userId          String
+  date            DateTime
+  hours           Float
+  description     String
+  status          String        @default("submitted") // "submitted", "approved", "rejected"
+  rejectionReason String?
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
