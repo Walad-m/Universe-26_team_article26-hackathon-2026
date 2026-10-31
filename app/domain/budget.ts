@@ -76,6 +76,26 @@ export function validateArbZGWorkingHours(
 }
 
 /**
+ * Validates cumulative daily working hours across multiple bookings for the same date
+ * Under § 3 ArbZG, total daily working time across all tasks cannot exceed 10 hours
+ */
+export function validateCumulativeDailyHours(
+  existingHours: number,
+  additionalHours: number,
+  maxDailyHours: number = 10.0
+): { valid: boolean; totalHours: number; error?: string } {
+  const totalHours = Number((existingHours + additionalHours).toFixed(2));
+  if (totalHours > maxDailyHours) {
+    return {
+      valid: false,
+      totalHours,
+      error: `Booking rejected: ${totalHours}h total daily hours exceeds the German Working Time Act (ArbZG) statutory limit of ${maxDailyHours} hours/day.`,
+    };
+  }
+  return { valid: true, totalHours };
+}
+
+/**
  * Calculates weekly burn rate (Person-Days consumed per week)
  */
 export function calculateWeeklyBurnRate(

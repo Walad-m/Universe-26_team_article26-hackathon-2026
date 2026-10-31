@@ -4,6 +4,7 @@ import {
   calculateRemainingBudget,
   validateBookingBudget,
   validateArbZGWorkingHours,
+  validateCumulativeDailyHours,
   calculateWeeklyBurnRate,
   calculateBudgetForecast,
 } from "../app/domain/budget";
@@ -66,6 +67,25 @@ describe("Orvix Business Rules & Budget Engine", () => {
       const result = validateArbZGWorkingHours(0, 10.0);
       expect(result.valid).toBe(false);
       expect(result.error).toContain("hours must be greater than 0");
+    });
+
+    it("accepts multiple bookings on the same day if cumulative sum is <= 10.0 hours", () => {
+      const result = validateCumulativeDailyHours(4.0, 4.0, 10.0);
+      expect(result.valid).toBe(true);
+      expect(result.totalHours).toBe(8.0);
+    });
+
+    it("accepts cumulative sum of exactly 10.0 hours on the same day (edge case)", () => {
+      const result = validateCumulativeDailyHours(6.0, 4.0, 10.0);
+      expect(result.valid).toBe(true);
+      expect(result.totalHours).toBe(10.0);
+    });
+
+    it("rejects a second booking on the same day if total hours would exceed 10.0 hours", () => {
+      const result = validateCumulativeDailyHours(6.0, 5.0, 10.0);
+      expect(result.valid).toBe(false);
+      expect(result.totalHours).toBe(11.0);
+      expect(result.error).toContain("exceeds the German Working Time Act (ArbZG) statutory limit");
     });
   });
 
