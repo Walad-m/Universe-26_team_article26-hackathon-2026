@@ -60,10 +60,10 @@ The skills live in `.claude/skills/`. Claude Code and GitHub Copilot (VS Code ag
 
 The team fills this in once the stack is chosen. Keep it short and exact.
 
-- Product: TODO
-- Track: TODO (code / mockup / concept)
-- Stack: TODO
-- Install: `TODO`
-- Run: `TODO`
-- Test: `TODO`
-- Folder structure: TODO
+- Product: Orvix
+- Track: Working code
+- Stack: Next.js 15, TypeScript, Prisma (SQLite), Tailwind CSS, Vitest
+- Install: `npm install && npx prisma db push && npm run seed`
+- Run: `npm run dev`
+- Test: `npm test`
+- Folder structure: `app/` (Next.js pages & Server Actions), `app/domain/` (business rules), `prisma/` (schema & seed), `tests/` (unit tests)
