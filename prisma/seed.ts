@@ -80,6 +80,7 @@ async function main() {
   const order = await prisma.purchaseOrder.create({
     data: {
       orderNumber: "PO-4500012345",
+      portalToken: "contractor-portal-2026",
       title: "Customer Portal Migration",
       description: "Migration of legacy customer database and frontend reconciliation",
       totalBudgetDays: 140.0,

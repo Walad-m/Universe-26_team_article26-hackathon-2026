@@ -34,9 +34,11 @@ model User {
 model PurchaseOrder {
   id               String            @id @default(cuid())
   orderNumber      String            @unique // e.g. "PO-4500012345"
+  portalToken      String?           @unique // Secure unique link token for external partner
   title            String
   description      String?
   totalBudgetDays  Float             // e.g. 140.0 Person-Days
+  hourlyRate       Float             @default(100.0) // Agreed rate in € per hour (default €100/h = €800/day)
   dailyHoursPerDay Float             @default(8.0) // Configurable conversion (default: 8.0h = 1 PD)
   maxDailyHours    Float             @default(10.0) // Configurable ArbZG limit (default: 10.0h)
   reorderLeadWeeks Int               @default(4) // Configurable warning window (default: 4 weeks)
