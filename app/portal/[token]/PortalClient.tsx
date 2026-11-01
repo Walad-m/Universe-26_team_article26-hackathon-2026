@@ -6,6 +6,7 @@ import {
   Clock,
   Briefcase,
   Calendar,
+  Check,
   CheckCircle2,
   AlertCircle,
   ShieldAlert,
@@ -134,7 +135,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col antialiased selection:bg-[#0071E3] selection:text-white">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col antialiased selection:bg-[#1D1D1F] selection:text-white">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/[0.06]">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -147,7 +148,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                 <span className="font-bold text-sm tracking-tight text-[#1D1D1F]">
                   {data.supplierName}
                 </span>
-                <span className="bg-blue-50 text-[#0071E3] text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                <span className="bg-black/[0.04] text-[#1D1D1F] text-[10px] font-semibold px-2 py-0.5 rounded-md">
                   Contractor Portal
                 </span>
               </div>
@@ -187,7 +188,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8 w-full space-y-8 flex-1">
-        {/* Project Overview Cards (Days, Hours & Money) */}
+        {/* Project Overview Cards: Money on Top, Days on Bottom, Clean Monochrome */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div>
@@ -200,30 +201,36 @@ export default function PortalClient({ initialData, currentUser }: Props) {
           <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">Agreed Budget</p>
-              <p className="text-2xl font-bold text-[#1D1D1F] mt-1 font-mono tabular-nums">{data.totalBudgetDays} Days</p>
+              <p className="text-2xl font-bold text-[#1D1D1F] mt-1 font-mono tabular-nums">
+                €{(data.totalBudgetDays * 8 * rate).toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs font-semibold text-[#1D1D1F] mt-2">
-              €{(data.totalBudgetDays * 8 * rate).toLocaleString()} <span className="font-normal text-[#86868B]">({data.totalBudgetDays * 8} Hours · €{rate}/h)</span>
+            <p className="text-xs text-[#86868B] font-medium mt-2">
+              {data.totalBudgetDays} Days · {data.totalBudgetDays * 8} Hours · €{rate}/h
             </p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">Work Logged</p>
-              <p className="text-2xl font-bold text-[#0071E3] mt-1 font-mono tabular-nums">{data.consumedDays} Days</p>
+              <p className="text-2xl font-bold text-[#1D1D1F] mt-1 font-mono tabular-nums">
+                €{(data.consumedDays * 8 * rate).toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs font-semibold text-[#0071E3] mt-2">
-              €{(data.consumedDays * 8 * rate).toLocaleString()} <span className="font-normal text-[#86868B]">({Math.round(data.consumedDays * 8)} Hours)</span>
+            <p className="text-xs text-[#86868B] font-medium mt-2">
+              {data.consumedDays} Days · {Math.round(data.consumedDays * 8)} Hours spent
             </p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">Remaining Budget</p>
-              <p className="text-2xl font-bold text-emerald-600 mt-1 font-mono tabular-nums">{data.remainingDays} Days</p>
+              <p className="text-2xl font-bold text-[#1D1D1F] mt-1 font-mono tabular-nums">
+                €{(data.remainingDays * 8 * rate).toLocaleString()}
+              </p>
             </div>
-            <p className="text-xs font-semibold text-emerald-600 mt-2">
-              €{(data.remainingDays * 8 * rate).toLocaleString()} <span className="font-normal text-[#86868B]">({Math.round(data.remainingDays * 8)} Hours left)</span>
+            <p className="text-xs text-[#86868B] font-medium mt-2">
+              {data.remainingDays} Days · {Math.round(data.remainingDays * 8)} Hours left
             </p>
           </div>
         </div>
@@ -233,7 +240,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
           <div className="border-b border-black/[0.06] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-[#1D1D1F] flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[#0071E3]" />
+                <Clock className="w-5 h-5 text-[#1D1D1F]" />
                 Log Your Work & Time
               </h2>
               <p className="text-xs text-[#86868B] mt-1">
@@ -244,7 +251,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
             <button
               type="button"
               onClick={() => setShowExtensionForm(!showExtensionForm)}
-              className="text-xs font-semibold text-[#0071E3] hover:text-[#0066CC] bg-blue-50/70 hover:bg-blue-100/60 border border-blue-200/50 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 self-start sm:self-auto"
+              className="text-xs font-semibold text-[#1D1D1F] hover:text-black bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Need Budget Extension?</span>
@@ -272,9 +279,9 @@ export default function PortalClient({ initialData, currentUser }: Props) {
               )}
 
               {extensionSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{extensionSuccess}</span>
+                <div className="p-3 bg-black/[0.04] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#1D1D1F]" />
+                  <span className="font-semibold">{extensionSuccess}</span>
                 </div>
               )}
 
@@ -293,10 +300,10 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                       onChange={(e) => setExtensionHours(e.target.value === "" ? "" : Number(e.target.value))}
                       placeholder="e.g. 40"
                       required
-                      className="w-full text-xs bg-white border border-amber-300 rounded-xl p-2.5 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:outline-none"
+                      className="w-full text-xs bg-white border border-amber-300 rounded-xl p-2.5 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:outline-none"
                     />
                     <span className="text-[10px] text-amber-800 mt-1 block">
-                      {extensionHours ? `+${extensionHours} Hours = ${(Number(extensionHours) / 8).toFixed(1)} Days (+€${(Number(extensionHours) * rate).toLocaleString()})` : ""}
+                      {extensionHours ? `+€${(Number(extensionHours) * rate).toLocaleString()} (+${extensionHours} Hours = ${(Number(extensionHours) / 8).toFixed(1)} Days)` : ""}
                     </span>
                   </div>
 
@@ -310,7 +317,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                       onChange={(e) => setExtensionReason(e.target.value)}
                       placeholder="e.g. Additional security audit & migration testing requested"
                       required
-                      className="w-full text-xs bg-white border border-amber-300 rounded-xl p-2.5 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:outline-none"
+                      className="w-full text-xs bg-white border border-amber-300 rounded-xl p-2.5 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -345,9 +352,9 @@ export default function PortalClient({ initialData, currentUser }: Props) {
 
           {/* Success Banner */}
           {successMessage && (
-            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span className="font-medium">{successMessage}</span>
+            <div className="p-3.5 bg-black/[0.04] border border-black/[0.08] rounded-2xl text-xs text-[#1D1D1F] flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#1D1D1F] shrink-0" />
+              <span className="font-semibold">{successMessage}</span>
             </div>
           )}
 
@@ -375,7 +382,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   required
-                  className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                  className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                 />
               </div>
 
@@ -392,7 +399,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                   onChange={(e) => setHours(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="e.g. 3.5, 4.0, 8.0"
                   required
-                  className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none font-mono"
+                  className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none font-mono"
                 />
                 {/* Fast hour selection chips */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
@@ -412,7 +419,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                   ))}
                 </div>
                 <span className="text-[10px] text-[#86868B] mt-1.5 block">
-                  {hours ? `${hours} Hours = ${(Number(hours) / 8).toFixed(2)} Days · €${(Number(hours) * rate).toLocaleString()}` : "Enter hours worked"}
+                  {hours ? `€${(Number(hours) * rate).toLocaleString()} · ${hours} Hours (${(Number(hours) / 8).toFixed(2)} Days)` : "Enter hours worked"}
                 </span>
               </div>
             </div>
@@ -427,7 +434,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                 rows={3}
                 placeholder="Describe milestone deliverable (e.g. Completed API gateway integration and unit tests for order endpoint)..."
                 required
-                className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
               />
             </div>
 
@@ -465,7 +472,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                 <tr>
                   <th className="py-3.5 px-5">Date</th>
                   <th className="py-3.5 px-5">Specialist</th>
-                  <th className="py-3.5 px-5 text-right">Time Worked</th>
+                  <th className="py-3.5 px-5 text-right">Deliverable Value & Time</th>
                   <th className="py-3.5 px-5">Deliverable Description</th>
                   <th className="py-3.5 px-5">Status</th>
                 </tr>
@@ -479,17 +486,17 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                     <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">
                       {b.consultantName}
                     </td>
-                    <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
-                      {b.hours}h ({b.personDays} Days)
-                      <div className="text-[10px] font-normal text-[#86868B]">€{(b.hours * rate).toLocaleString()}</div>
+                    <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
+                      <div className="font-semibold text-xs">€{(b.hours * rate).toLocaleString()}</div>
+                      <div className="text-[10px] text-[#86868B]">{b.personDays} Days ({b.hours}h)</div>
                     </td>
                     <td className="py-3.5 px-5 text-[#1D1D1F] max-w-md">
                       {b.description}
                     </td>
                     <td className="py-3.5 px-5">
                       {b.status === "approved" && (
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                          <Check className="w-3 h-3 text-[#1D1D1F]" />
                           Approved
                         </span>
                       )}

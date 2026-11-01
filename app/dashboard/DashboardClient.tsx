@@ -272,7 +272,7 @@ export default function DashboardClient({ initialData }: Props) {
     : data.bookings;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col md:flex-row antialiased selection:bg-[#0071E3] selection:text-white">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col md:flex-row antialiased selection:bg-[#1D1D1F] selection:text-white">
       {/* 1. Sleek Apple-Style Left Sidebar (Desktop) */}
       <aside className="w-64 lg:w-72 bg-white/95 backdrop-blur-md border-r border-black/[0.06] flex-col justify-between h-screen sticky top-0 shrink-0 z-40 hidden md:flex">
         {/* Brand & Organization */}
@@ -287,7 +287,7 @@ export default function DashboardClient({ initialData }: Props) {
                   {data.currentUser.companyName}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F]" />
                   <p className="text-[10px] font-semibold text-[#86868B] uppercase tracking-wider">
                     Client Organization
                   </p>
@@ -339,7 +339,7 @@ export default function DashboardClient({ initialData }: Props) {
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     activeTab === "approvals"
                       ? "bg-white text-[#1D1D1F]"
-                      : "bg-[#0071E3] text-white"
+                      : "bg-[#1D1D1F] text-white"
                   }`}
                 >
                   {pendingBookingsCount}
@@ -410,7 +410,7 @@ export default function DashboardClient({ initialData }: Props) {
                     {o.hasShortfall ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="Shortage alert" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Healthy runway" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F] shrink-0" title="Healthy runway" />
                     )}
                   </button>
                 ))}
@@ -511,7 +511,7 @@ export default function DashboardClient({ initialData }: Props) {
                 <button
                   type="button"
                   onClick={() => setSelectedOrderId("all")}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] hover:text-[#0066CC] mb-2 bg-white px-3 py-1.5 rounded-xl border border-black/[0.06] shadow-xs"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F] hover:text-black mb-2 bg-white px-3 py-1.5 rounded-xl border border-black/[0.08] shadow-xs"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to All Projects Overview</span>
@@ -559,7 +559,11 @@ export default function DashboardClient({ initialData }: Props) {
                     }`}
                   >
                     <span className="truncate">{o.title}</span>
-                    {o.hasShortfall && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                    {o.hasShortfall ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F]" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -568,9 +572,9 @@ export default function DashboardClient({ initialData }: Props) {
 
           {/* Action Success or Error Notification */}
           {actionSuccess && (
-            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span className="font-medium">{actionSuccess}</span>
+            <div className="p-3.5 bg-black/[0.04] border border-black/[0.08] rounded-2xl text-xs text-[#1D1D1F] flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#1D1D1F] shrink-0" />
+              <span className="font-semibold">{actionSuccess}</span>
             </div>
           )}
 
@@ -590,7 +594,7 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
-                        <FolderKanban className="w-4 h-4 text-[#0071E3]" />
+                        <FolderKanban className="w-4 h-4 text-[#1D1D1F]" />
                         Active Project Contracts
                       </h2>
                       <p className="text-xs text-[#86868B] mt-0.5">
@@ -610,7 +614,7 @@ export default function DashboardClient({ initialData }: Props) {
                         <div
                           key={o.id}
                           onClick={() => setSelectedOrderId(o.id)}
-                          className="bg-white rounded-3xl p-6 border border-black/[0.06] hover:border-[#0071E3]/50 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,113,227,0.08)] transition cursor-pointer flex flex-col justify-between space-y-4 group"
+                          className="bg-white rounded-3xl p-6 border border-black/[0.06] hover:border-black/30 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition cursor-pointer flex flex-col justify-between space-y-4 group"
                         >
                           {/* Card Header */}
                           <div className="flex items-start justify-between gap-3">
@@ -618,7 +622,7 @@ export default function DashboardClient({ initialData }: Props) {
                               <span className="text-[10px] font-mono text-[#86868B] uppercase tracking-wider block">
                                 {o.orderNumber} · {o.supplierName}
                               </span>
-                              <h3 className="text-lg font-bold text-[#1D1D1F] group-hover:text-[#0071E3] transition truncate mt-0.5">
+                              <h3 className="text-lg font-bold text-[#1D1D1F] group-hover:text-black transition truncate mt-0.5">
                                 {o.title}
                               </h3>
                             </div>
@@ -630,31 +634,31 @@ export default function DashboardClient({ initialData }: Props) {
                                 Reorder by Wk {o.forecast.reorderDeadlineWeek}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
+                                <Check className="w-3 h-3 text-[#1D1D1F]" />
                                 Runway Healthy
                               </span>
                             )}
                           </div>
 
-                          {/* Metric Numbers */}
+                          {/* Metric Numbers: Money on Top, Days on Bottom */}
                           <div className="grid grid-cols-3 gap-3 py-2 border-y border-black/[0.04] text-xs">
                             <div>
                               <span className="text-[10px] text-[#86868B] font-medium block">Total Budget</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm">{o.totalBudgetDays} Days</span>
-                              <span className="text-[10px] text-[#86868B] block">€{o.totalMoney.toLocaleString()}</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.totalMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.totalBudgetDays} Days · {o.totalHours}h</span>
                             </div>
 
                             <div>
                               <span className="text-[10px] text-[#86868B] font-medium block">Work Logged</span>
-                              <span className="font-extrabold text-[#0071E3] font-mono text-sm">{o.bookedDays} Days</span>
-                              <span className="text-[10px] text-[#86868B] block">€{o.usedMoney.toLocaleString()}</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.usedMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.bookedDays} Days · {o.usedHours}h</span>
                             </div>
 
                             <div>
                               <span className="text-[10px] text-[#86868B] font-medium block">Remaining</span>
-                              <span className="font-extrabold text-emerald-600 font-mono text-sm">{o.remainingDays} Days</span>
-                              <span className="text-[10px] text-[#86868B] block">€{o.leftMoney.toLocaleString()}</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.leftMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.remainingDays} Days · {o.leftHours}h</span>
                             </div>
                           </div>
 
@@ -667,14 +671,14 @@ export default function DashboardClient({ initialData }: Props) {
                             <div className="w-full bg-[#F5F5F7] h-2 rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  o.hasShortfall ? "bg-amber-500" : percentUsed > 80 ? "bg-emerald-600" : "bg-[#0071E3]"
+                                  o.hasShortfall ? "bg-amber-500" : "bg-[#1D1D1F]"
                                 }`}
                                 style={{ width: `${Math.max(2, percentUsed)}%` }}
                               />
                             </div>
                           </div>
 
-                          <div className="pt-1 flex items-center justify-between text-xs text-[#0071E3] font-semibold">
+                          <div className="pt-1 flex items-center justify-between text-xs text-[#1D1D1F] font-semibold group-hover:underline">
                             <span>Open Project Cockpit & Radar</span>
                             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </div>
@@ -685,7 +689,7 @@ export default function DashboardClient({ initialData }: Props) {
                 </div>
               )}
 
-              {/* Metric Cards (Shows either for the Selected Project or the Overall Portfolio) */}
+              {/* Metric Cards: Unified Clean Monochrome, Money on Top, Days on Bottom */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-[#86868B] uppercase tracking-wider">
@@ -704,15 +708,11 @@ export default function DashboardClient({ initialData }: Props) {
                     </div>
                     <div className="mt-3">
                       <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                        {selectedOrder ? selectedOrder.totalBudgetDays : data.metrics.totalBudgetDays}{" "}
-                        <span className="text-base font-medium text-[#86868B]">Days</span>
+                        €{(selectedOrder ? selectedOrder.totalMoney : data.metrics.totalBudgetMoney).toLocaleString()}
                       </div>
-                      <p className="text-xs font-semibold text-[#1D1D1F] mt-1">
-                        €
-                        {(selectedOrder ? selectedOrder.totalMoney : data.metrics.totalBudgetMoney).toLocaleString()}{" "}
-                        <span className="text-[#86868B] font-normal">
-                          ({(selectedOrder ? selectedOrder.totalHours : data.metrics.totalBudgetHours).toLocaleString()} Hours)
-                        </span>
+                      <p className="text-xs text-[#86868B] font-medium mt-1">
+                        {selectedOrder ? selectedOrder.totalBudgetDays : data.metrics.totalBudgetDays} Days ·{" "}
+                        {(selectedOrder ? selectedOrder.totalHours : data.metrics.totalBudgetHours).toLocaleString()} Hours
                       </p>
                     </div>
                   </div>
@@ -721,19 +721,17 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
                       <span>Work Completed</span>
-                      <span className="text-[10px] bg-blue-50 text-[#0071E3] px-2 py-0.5 rounded-md font-semibold">
+                      <span className="text-[10px] bg-black/[0.04] text-[#1D1D1F] px-2 py-0.5 rounded-md font-semibold">
                         {selectedOrder ? `${selectedOrder.usedHours}h Logged` : `${data.metrics.totalBookedHours}h Logged`}
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#0071E3] font-mono tabular-nums">
-                        {selectedOrder ? selectedOrder.bookedDays : data.metrics.totalBookedDays}{" "}
-                        <span className="text-base font-medium text-[#0071E3]/70">Days</span>
+                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        €{(selectedOrder ? selectedOrder.usedMoney : data.metrics.totalBookedMoney).toLocaleString()}
                       </div>
-                      <p className="text-xs font-semibold text-[#0071E3] mt-1">
-                        €
-                        {(selectedOrder ? selectedOrder.usedMoney : data.metrics.totalBookedMoney).toLocaleString()}{" "}
-                        <span className="text-[#86868B] font-normal">spent so far</span>
+                      <p className="text-xs text-[#86868B] font-medium mt-1">
+                        {selectedOrder ? selectedOrder.bookedDays : data.metrics.totalBookedDays} Days ·{" "}
+                        {(selectedOrder ? selectedOrder.usedHours : data.metrics.totalBookedHours).toLocaleString()} Hours spent
                       </p>
                     </div>
                   </div>
@@ -742,21 +740,17 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
                       <span>Budget Remaining</span>
-                      <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-semibold">
+                      <span className="text-[10px] bg-black/[0.04] text-[#1D1D1F] px-2 py-0.5 rounded-md font-semibold">
                         Available
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-emerald-600 font-mono tabular-nums">
-                        {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays}{" "}
-                        <span className="text-base font-medium text-emerald-600/70">Days</span>
+                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        €{(selectedOrder ? selectedOrder.leftMoney : data.metrics.remainingBudgetMoney).toLocaleString()}
                       </div>
-                      <p className="text-xs font-semibold text-emerald-600 mt-1">
-                        €
-                        {(selectedOrder ? selectedOrder.leftMoney : data.metrics.remainingBudgetMoney).toLocaleString()}{" "}
-                        <span className="text-[#86868B] font-normal">
-                          ({(selectedOrder ? selectedOrder.leftHours : data.metrics.remainingBudgetHours).toLocaleString()} Hours left)
-                        </span>
+                      <p className="text-xs text-[#86868B] font-medium mt-1">
+                        {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days ·{" "}
+                        {(selectedOrder ? selectedOrder.leftHours : data.metrics.remainingBudgetHours).toLocaleString()} Hours left
                       </p>
                     </div>
                   </div>
@@ -769,7 +763,7 @@ export default function DashboardClient({ initialData }: Props) {
                         className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
                           (selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
                             ? "bg-amber-50 text-amber-800"
-                            : "bg-emerald-50 text-emerald-700"
+                            : "bg-black/[0.04] text-[#1D1D1F]"
                         }`}
                       >
                         {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
@@ -797,7 +791,7 @@ export default function DashboardClient({ initialData }: Props) {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-5">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] mb-1">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F] mb-1">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>{selectedOrder ? `${selectedOrder.title} · Budget Radar` : "Pace Forecaster"}</span>
                     </div>
@@ -821,12 +815,12 @@ export default function DashboardClient({ initialData }: Props) {
                       type="checkbox"
                       checked={includeShutdown}
                       onChange={(e) => setIncludeShutdown(e.target.checked)}
-                      className="w-4 h-4 accent-[#0071E3] rounded cursor-pointer"
+                      className="w-4 h-4 accent-[#1D1D1F] rounded cursor-pointer"
                     />
                   </div>
                 </div>
 
-                {/* 3 Simple Column Numbers */}
+                {/* 3 Simple Column Numbers: Money on Top, Days on Bottom */}
                 {(() => {
                   const currentBurnRate = selectedOrder ? selectedOrder.forecast.weeklyBurnRate : data.metrics.forecast.weeklyBurnRate;
                   const currentRate = selectedOrder ? selectedOrder.hourlyRate : 100;
@@ -843,11 +837,11 @@ export default function DashboardClient({ initialData }: Props) {
                         <div className="space-y-1.5">
                           <span className="text-xs font-medium text-[#86868B]">Contractor Working Pace</span>
                           <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                            {currentBurnRate} Days <span className="text-xs font-normal text-[#86868B]">/ week</span>
-                          </p>
-                          <p className="text-[11px] font-semibold text-[#1D1D1F]">
                             €{(currentBurnRate * 8 * currentRate).toLocaleString()}{" "}
-                            <span className="font-normal text-[#86868B]">({currentBurnRate * 8} Hours / week)</span>
+                            <span className="text-xs font-normal text-[#86868B]">/ week</span>
+                          </p>
+                          <p className="text-[11px] text-[#86868B]">
+                            {currentBurnRate} Days · {currentBurnRate * 8} Hours / week
                           </p>
                         </div>
 
@@ -870,22 +864,18 @@ export default function DashboardClient({ initialData }: Props) {
                           </span>
                           {currentHasShortfall ? (
                             <>
-                              <p className="text-2xl font-bold text-[#FF3B30] font-mono tabular-nums">
-                                ≈ {currentMissingDays} Days Short
+                              <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
+                                €{currentMissingMoney.toLocaleString()} Extra Needed
                               </p>
-                              <p className="text-[11px] font-semibold text-[#FF3B30]">
-                                €{currentMissingMoney.toLocaleString()} Extra Needed{" "}
-                                <span className="font-normal text-[#86868B]">({currentMissingHours} Hours)</span>
+                              <p className="text-[11px] text-[#86868B]">
+                                ≈ {currentMissingDays} Days · {currentMissingHours} Hours shortage
                               </p>
                             </>
                           ) : (
                             <>
-                              <p className="text-2xl font-bold text-emerald-600 font-mono tabular-nums">Fully Funded</p>
-                              <p className="text-[11px] font-semibold text-emerald-700">
-                                0 Days Shortage{" "}
-                                <span className="font-normal text-[#86868B]">
-                                  ({selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days available)
-                                </span>
+                              <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">Fully Funded</p>
+                              <p className="text-[11px] text-[#86868B]">
+                                €0 Extra Needed · {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days available
                               </p>
                             </>
                           )}
@@ -919,19 +909,19 @@ export default function DashboardClient({ initialData }: Props) {
                           </button>
                         </div>
                       ) : (
-                        <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="bg-black/[0.02] border border-black/[0.06] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#1D1D1F]">
+                              <Check className="w-4 h-4 text-[#1D1D1F]" />
                               <span>Budget Runway Healthy: No Shortage Detected</span>
                             </div>
-                            <p className="text-xs text-emerald-800">
+                            <p className="text-xs text-[#86868B]">
                               Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not
                               needed at this time.
                             </p>
                           </div>
-                          <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full shrink-0">
-                            ✅ Runway Healthy
+                          <span className="text-xs font-semibold px-3 py-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] rounded-full shrink-0 flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-[#1D1D1F]" /> Runway Healthy
                           </span>
                         </div>
                       )}
@@ -946,7 +936,7 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
                     <div>
                       <h3 className="font-bold text-[#1D1D1F] text-base flex items-center gap-2">
-                        <FileCheck className="w-4 h-4 text-[#0071E3]" />
+                        <FileCheck className="w-4 h-4 text-[#1D1D1F]" />
                         Work Logs for {selectedOrder.title}
                       </h3>
                       <p className="text-xs text-[#86868B] mt-0.5">
@@ -964,7 +954,7 @@ export default function DashboardClient({ initialData }: Props) {
                         <tr>
                           <th className="py-3.5 px-5">Date</th>
                           <th className="py-3.5 px-5">Specialist Name</th>
-                          <th className="py-3.5 px-5 text-right">Time Worked</th>
+                          <th className="py-3.5 px-5 text-right">Deliverable Value & Time</th>
                           <th className="py-3.5 px-5">What Was Delivered</th>
                           <th className="py-3.5 px-5">Status</th>
                           <th className="py-3.5 px-5 text-center">Action</th>
@@ -982,15 +972,15 @@ export default function DashboardClient({ initialData }: Props) {
                             <tr key={b.id} className="hover:bg-[#F5F5F7]/50 transition">
                               <td className="py-3.5 px-5 font-mono text-[#86868B]">{b.date}</td>
                               <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.consultantName}</td>
-                              <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
-                                {b.hours}h ({b.personDays} Days)
-                                <div className="text-[10px] font-normal text-[#86868B]">€{b.moneyEur.toLocaleString()}</div>
+                              <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
+                                <div className="font-semibold text-xs">€{b.moneyEur.toLocaleString()}</div>
+                                <div className="text-[10px] text-[#86868B]">{b.personDays} Days · {b.hours}h</div>
                               </td>
                               <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
                               <td className="py-3.5 px-5">
                                 {b.status === "approved" && (
-                                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                                    <Check className="w-3 h-3 text-[#1D1D1F]" />
                                     Approved
                                   </span>
                                 )}
@@ -1044,7 +1034,7 @@ export default function DashboardClient({ initialData }: Props) {
                                       type="button"
                                       onClick={() => handleApprove(b.id)}
                                       disabled={isPending}
-                                      className="bg-[#0071E3] hover:bg-[#0066CC] text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
+                                      className="bg-[#1D1D1F] hover:bg-black text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
                                     >
                                       Approve
                                     </button>
@@ -1097,7 +1087,7 @@ export default function DashboardClient({ initialData }: Props) {
                       <th className="py-3.5 px-5">Contract Number</th>
                       <th className="py-3.5 px-5">Company</th>
                       <th className="py-3.5 px-5">Specialist Name</th>
-                      <th className="py-3.5 px-5 text-right">Time Worked</th>
+                      <th className="py-3.5 px-5 text-right">Deliverable Value & Time</th>
                       <th className="py-3.5 px-5">What Was Built</th>
                       <th className="py-3.5 px-5">Status</th>
                       <th className="py-3.5 px-5 text-center">Action</th>
@@ -1108,20 +1098,20 @@ export default function DashboardClient({ initialData }: Props) {
                       <tr key={b.id} className="hover:bg-[#F5F5F7]/50 transition">
                         <td className="py-3.5 px-5 font-mono text-[#86868B]">{b.date}</td>
                         <td className="py-3.5 px-5">
-                          <span className="font-mono font-semibold text-[#0071E3]">{b.orderNumber}</span>
+                          <span className="font-mono font-semibold text-[#1D1D1F]">{b.orderNumber}</span>
                           <div className="text-[11px] text-[#86868B] truncate max-w-xs">{b.orderTitle}</div>
                         </td>
                         <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.supplierName}</td>
                         <td className="py-3.5 px-5 text-[#86868B]">{b.consultantName}</td>
-                        <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
-                          {b.hours}h ({b.personDays} Days)
-                          <div className="text-[10px] font-normal text-[#86868B]">€{b.moneyEur.toLocaleString()}</div>
+                        <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
+                          <div className="font-semibold text-xs">€{b.moneyEur.toLocaleString()}</div>
+                          <div className="text-[10px] text-[#86868B]">{b.personDays} Days · {b.hours}h</div>
                         </td>
                         <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
                         <td className="py-3.5 px-5">
                           {b.status === "approved" && (
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                              <Check className="w-3 h-3 text-[#1D1D1F]" />
                               Approved
                             </span>
                           )}
@@ -1172,7 +1162,7 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleApprove(b.id)}
                                 disabled={isPending}
-                                className="bg-[#0071E3] hover:bg-[#0066CC] text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
+                                className="bg-[#1D1D1F] hover:bg-black text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
                               >
                                 Approve
                               </button>
@@ -1212,12 +1202,12 @@ export default function DashboardClient({ initialData }: Props) {
                 </div>
 
                 {newlyGeneratedUrl && (
-                  <div className="p-4 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <div className="p-4 bg-black/[0.02] border border-black/[0.08] rounded-2xl space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#1D1D1F]">
+                      <Check className="w-4 h-4 text-[#1D1D1F]" />
                       <span>Link created! Send this link to the external partner:</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-emerald-200/60">
+                    <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-black/[0.08]">
                       <input
                         type="text"
                         readOnly
@@ -1227,7 +1217,7 @@ export default function DashboardClient({ initialData }: Props) {
                       <button
                         type="button"
                         onClick={() => handleCopy("new", newlyGeneratedUrl)}
-                        className="bg-[#0071E3] hover:bg-[#0066CC] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 transition inline-flex items-center gap-1"
+                        className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 transition inline-flex items-center gap-1"
                       >
                         {copiedToken === "new" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                         {copiedToken === "new" ? "Copied" : "Copy Link"}
@@ -1248,7 +1238,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setExternalCompanyName(e.target.value)}
                         placeholder="e.g. KGL Group or Agency Alpha"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                     </div>
 
@@ -1262,7 +1252,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setProjectName(e.target.value)}
                         placeholder="e.g. Hostel for student"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1278,7 +1268,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setOrderNumber(e.target.value)}
                         placeholder="e.g. PO-4500012345"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                     </div>
 
@@ -1294,7 +1284,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setBudgetDays(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="140"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                       <span className="text-[10px] text-[#86868B] mt-1 block">
                         1 Day = 8 hours
@@ -1314,7 +1304,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setHourlyRate(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="100"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                       <span className="text-[10px] text-[#86868B] mt-1 block">
                         Standard German IT: €100/h
@@ -1329,7 +1319,7 @@ export default function DashboardClient({ initialData }: Props) {
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1391,7 +1381,7 @@ export default function DashboardClient({ initialData }: Props) {
                           : `/portal/${o.portalToken}`;
                         return (
                           <tr key={o.id} className="hover:bg-[#F5F5F7]/50 transition">
-                            <td className="py-3.5 px-5 font-mono font-semibold text-[#0071E3]">
+                            <td className="py-3.5 px-5 font-mono font-semibold text-[#1D1D1F]">
                               {o.orderNumber}
                             </td>
                             <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">
@@ -1404,17 +1394,18 @@ export default function DashboardClient({ initialData }: Props) {
                                   setActiveTab("overview");
                                   setSelectedOrderId(o.id);
                                 }}
-                                className="hover:text-[#0071E3] hover:underline font-medium text-left"
+                                className="hover:text-black hover:underline font-medium text-left"
                               >
                                 {o.title}
                               </button>
                             </td>
-                            <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
-                              {o.totalBudgetDays} Days
-                              <div className="text-[10px] font-normal text-[#86868B]">€{o.totalMoney.toLocaleString()}</div>
+                            <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
+                              <div className="font-semibold text-xs">€{o.totalMoney.toLocaleString()}</div>
+                              <div className="text-[10px] text-[#86868B]">{o.totalBudgetDays} Days</div>
                             </td>
-                            <td className="py-3.5 px-5 text-right font-mono font-medium text-[#86868B]">
-                              <span className="text-[#0071E3]">{o.bookedDays} Days</span> / <span className="text-emerald-600">{o.remainingDays} Days</span>
+                            <td className="py-3.5 px-5 text-right font-mono text-xs">
+                              <div className="font-semibold text-[#1D1D1F]">€{o.usedMoney.toLocaleString()} / €{o.leftMoney.toLocaleString()}</div>
+                              <div className="text-[10px] text-[#86868B]">{o.bookedDays} Days / {o.remainingDays} Days</div>
                             </td>
                             <td className="py-3.5 px-5">
                               <div className="flex items-center gap-2">
@@ -1426,7 +1417,7 @@ export default function DashboardClient({ initialData }: Props) {
                                   onClick={() => handleCopy(o.id, url)}
                                   className="text-[11px] font-medium bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] border border-black/[0.08] px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1 shrink-0"
                                 >
-                                  {copiedToken === o.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#86868B]" />}
+                                  {copiedToken === o.id ? <Check className="w-3 h-3 text-[#1D1D1F]" /> : <Copy className="w-3 h-3 text-[#86868B]" />}
                                   {copiedToken === o.id ? "Copied" : "Copy"}
                                 </button>
                               </div>

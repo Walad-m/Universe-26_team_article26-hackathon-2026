@@ -92,7 +92,7 @@ export default function LandingClient({ currentUser }: Props) {
       {/* 2. Hero Section */}
       <section className="max-w-5xl mx-auto px-6 pt-16 pb-12 sm:pt-24 sm:pb-16 text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.03)] text-xs font-semibold text-[#1D1D1F]">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#1D1D1F] animate-pulse" />
           <span>Article26 Hackathon 2026 · Team Orvix</span>
         </div>
 
@@ -253,7 +253,7 @@ export default function LandingClient({ currentUser }: Props) {
 
           {/* Card 3 */}
           <div className="bg-white p-7 rounded-3xl border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-black/[0.04] text-[#1D1D1F] flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-[#1D1D1F]">

@@ -252,7 +252,7 @@ export default function PartnerAuthClient({ orderData }: Props) {
         {/* Legal Limit Notice */}
         <div className="text-center">
           <p className="text-[11px] text-[#86868B] flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1D1D1F]" />
             German labor law compliant · Daily limit max 10 hours
           </p>
         </div>

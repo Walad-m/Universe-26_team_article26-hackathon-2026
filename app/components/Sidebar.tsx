@@ -83,7 +83,7 @@ export default function Sidebar({ user }: SidebarProps) {
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    isClient ? "bg-emerald-500" : "bg-blue-500"
+                    isClient ? "bg-slate-900" : "bg-blue-500"
                   }`}
                 />
                 <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
