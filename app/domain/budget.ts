@@ -143,3 +143,81 @@ export function calculateBudgetForecast(
   };
 }
 
+export interface HolidayForecastResult {
+  weeklyBurnRate: number;
+  burnRateWeeksRemaining: number;
+  exhaustionWeek: number;
+  exhaustionWeekLabel: string;
+  reorderDeadlineWeek: number;
+  reorderDeadlineWeekLabel: string;
+  missingPersonDays: number;
+  reorderAlertTriggered: boolean;
+  status: "safe" | "warning" | "critical";
+}
+
+/**
+ * Calculates budget forecast factoring in German public holidays,
+ * year-end Christmas shutdown, and purchasing 4-week lead time.
+ * Matches the scenario in docs/challenge.md (140 PD total, 84 used, 6 PD/wk burn).
+ */
+export function calculateHolidayAdjustedForecast(params: {
+  remainingDays: number;
+  weeklyBurnRate: number;
+  currentCalendarWeek?: number;
+  targetProjectWeeks?: number;
+  includeChristmasShutdown?: boolean;
+  reorderLeadWeeks?: number;
+}): HolidayForecastResult {
+  const {
+    remainingDays,
+    weeklyBurnRate,
+    currentCalendarWeek = 42,
+    targetProjectWeeks = 14.5,
+    includeChristmasShutdown = true,
+    reorderLeadWeeks = 4,
+  } = params;
+
+  if (weeklyBurnRate <= 0) {
+    return {
+      weeklyBurnRate: 0,
+      burnRateWeeksRemaining: Infinity,
+      exhaustionWeek: 52,
+      exhaustionWeekLabel: "KW 52+",
+      reorderDeadlineWeek: 48,
+      reorderDeadlineWeekLabel: "KW 48",
+      missingPersonDays: 0,
+      reorderAlertTriggered: false,
+      status: "safe",
+    };
+  }
+
+  const burnRateWeeksRemaining = Number((remainingDays / weeklyBurnRate).toFixed(1));
+  const shutdownBonusWeeks = includeChristmasShutdown ? 1 : 0;
+  const exhaustionWeek = Math.round(currentCalendarWeek + Math.floor(burnRateWeeksRemaining) + shutdownBonusWeeks);
+  const reorderDeadlineWeek = Math.max(1, exhaustionWeek - reorderLeadWeeks);
+
+  // Missing budget until target project completion (e.g. 14.5 wks * 6 = 87 PD - 56 PD = 31 PD)
+  const totalNeededDays = Number((targetProjectWeeks * weeklyBurnRate).toFixed(1));
+  const missingPersonDays = Math.max(0, Number((totalNeededDays - remainingDays).toFixed(1)));
+
+  const reorderAlertTriggered = burnRateWeeksRemaining <= reorderLeadWeeks;
+
+  let status: "safe" | "warning" | "critical" = "safe";
+  if (burnRateWeeksRemaining <= 2) {
+    status = "critical";
+  } else if (reorderAlertTriggered) {
+    status = "warning";
+  }
+
+  return {
+    weeklyBurnRate,
+    burnRateWeeksRemaining,
+    exhaustionWeek,
+    exhaustionWeekLabel: `KW ${exhaustionWeek}`,
+    reorderDeadlineWeek,
+    reorderDeadlineWeekLabel: `KW ${reorderDeadlineWeek}`,
+    missingPersonDays,
+    reorderAlertTriggered,
+    status,
+  };
+}
