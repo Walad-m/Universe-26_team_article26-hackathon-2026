@@ -198,6 +198,22 @@ export async function getDashboardData() {
       const leftHours = Math.round(remaining * o.dailyHoursPerDay);
       const leftMoney = Math.round(leftHours * rate);
 
+      // Individual project forecast
+      const orderBurnRate = consumed > 0 ? 6.0 : 0.0;
+      const orderForecast = calculateHolidayAdjustedForecast({
+        remainingDays: remaining,
+        weeklyBurnRate: orderBurnRate > 0 ? orderBurnRate : 5.0,
+        currentCalendarWeek: 42,
+        targetProjectWeeks: 14.5,
+        includeChristmasShutdown: true,
+        reorderLeadWeeks: o.reorderLeadWeeks || 4,
+      });
+
+      const orderMissingDays = consumed > 0 ? orderForecast.missingPersonDays : 0;
+      const orderMissingHours = Math.round(orderMissingDays * o.dailyHoursPerDay);
+      const orderMissingMoney = Math.round(orderMissingHours * rate);
+      const hasShortfall = orderMissingDays > 0;
+
       return {
         id: o.id,
         orderNumber: o.orderNumber,
@@ -218,6 +234,13 @@ export async function getDashboardData() {
         portalToken: o.portalToken || o.id,
         supplierName: o.company.name,
         status: o.status,
+        forecast: {
+          ...orderForecast,
+          missingPersonDays: orderMissingDays,
+        },
+        hasShortfall,
+        missingBudgetHours: orderMissingHours,
+        missingBudgetMoney: orderMissingMoney,
       };
     }),
     bookings: allBookings,

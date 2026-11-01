@@ -17,11 +17,15 @@ import {
   Users,
   Wallet,
   ArrowUpRight,
+  ArrowLeft,
   Sun,
   LayoutDashboard,
   FileCheck,
   AlertTriangle,
   Sparkles,
+  ChevronRight,
+  FolderKanban,
+  Layers,
 } from "lucide-react";
 import {
   createOrderAndGenerateLink,
@@ -32,6 +36,7 @@ import {
   BookingDisplayItem,
 } from "@/app/actions/dashboard";
 import { logoutUser } from "@/app/actions/auth";
+import { HolidayForecastResult } from "@/app/domain/budget";
 
 interface OrderItem {
   id: string;
@@ -39,13 +44,24 @@ interface OrderItem {
   title: string;
   description: string | null;
   totalBudgetDays: number;
+  hourlyRate: number;
+  totalHours: number;
+  totalMoney: number;
   bookedDays: number;
+  usedHours: number;
+  usedMoney: number;
   remainingDays: number;
+  leftHours: number;
+  leftMoney: number;
   startDate: string;
   endDate: string;
   portalToken: string;
   supplierName: string;
   status: string;
+  forecast: HolidayForecastResult;
+  hasShortfall: boolean;
+  missingBudgetHours: number;
+  missingBudgetMoney: number;
 }
 
 interface Props {
@@ -66,6 +82,7 @@ interface Props {
 export default function DashboardClient({ initialData }: Props) {
   const [data, setData] = useState(initialData);
   const [activeTab, setActiveTab] = useState<"overview" | "approvals" | "links">("overview");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | "all">("all");
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   // Holiday shutdown simulator toggle
@@ -122,13 +139,34 @@ export default function DashboardClient({ initialData }: Props) {
           title: projectName,
           description: null,
           totalBudgetDays: days,
+          hourlyRate: rate,
+          totalHours: days * 8,
+          totalMoney: days * 8 * rate,
           bookedDays: 0,
+          usedHours: 0,
+          usedMoney: 0,
           remainingDays: days,
+          leftHours: days * 8,
+          leftMoney: days * 8 * rate,
           startDate,
           endDate: endDate || "2027-02-15",
           portalToken: result.generatedToken || "",
           supplierName: externalCompanyName,
           status: "active",
+          forecast: {
+            weeklyBurnRate: 0,
+            burnRateWeeksRemaining: 99,
+            exhaustionWeek: 52,
+            exhaustionWeekLabel: "KW 52",
+            reorderDeadlineWeek: 48,
+            reorderDeadlineWeekLabel: "KW 48",
+            reorderAlertTriggered: false,
+            missingPersonDays: 0,
+            status: "safe",
+          },
+          hasShortfall: false,
+          missingBudgetHours: 0,
+          missingBudgetMoney: 0,
         };
 
         setData((prev) => ({
@@ -211,10 +249,11 @@ export default function DashboardClient({ initialData }: Props) {
     });
   };
 
-  const handleCreateReorderProposal = () => {
+  const handleCreateReorderProposal = (orderId?: string, missingDays?: number) => {
     startTransition(async () => {
-      const primaryOrder = data.orders[0];
-      const res = await createReorderProposal(primaryOrder?.id, data.metrics.forecast.missingPersonDays);
+      const targetId = orderId || data.orders[0]?.id;
+      const daysNeeded = missingDays ?? data.metrics.forecast.missingPersonDays;
+      const res = await createReorderProposal(targetId, daysNeeded);
       if (res.success) {
         setActionSuccess(res.message || "Budget extension request sent to Purchasing!");
         setTimeout(() => setActionSuccess(null), 4000);
@@ -225,6 +264,12 @@ export default function DashboardClient({ initialData }: Props) {
   };
 
   const pendingBookingsCount = data.bookings.filter((b) => b.status === "submitted").length;
+
+  // Selected Order for Drill-Down
+  const selectedOrder = selectedOrderId === "all" ? null : data.orders.find((o) => o.id === selectedOrderId);
+  const filteredBookings = selectedOrder
+    ? data.bookings.filter((b) => b.orderNumber === selectedOrder.orderNumber)
+    : data.bookings;
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col md:flex-row antialiased selection:bg-[#0071E3] selection:text-white">
@@ -260,7 +305,9 @@ export default function DashboardClient({ initialData }: Props) {
             {/* Tab 1: Budget & Forecast */}
             <button
               type="button"
-              onClick={() => setActiveTab("overview")}
+              onClick={() => {
+                setActiveTab("overview");
+              }}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
                 activeTab === "overview"
                   ? "bg-[#1D1D1F] text-white shadow-xs"
@@ -322,6 +369,53 @@ export default function DashboardClient({ initialData }: Props) {
                 {data.orders.length}
               </span>
             </button>
+
+            {/* Quick Projects Sub-List in Sidebar */}
+            <div className="pt-4 mt-3 border-t border-black/[0.06]">
+              <p className="px-3 text-[10px] font-bold text-[#86868B] uppercase tracking-wider mb-2">
+                Active Projects
+              </p>
+              <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("overview");
+                    setSelectedOrderId("all");
+                  }}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-medium transition truncate flex items-center justify-between ${
+                    selectedOrderId === "all"
+                      ? "bg-black/[0.06] text-[#1D1D1F] font-semibold"
+                      : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.02]"
+                  }`}
+                >
+                  <span className="truncate">All Projects Portfolio</span>
+                  <span className="text-[10px] text-[#86868B]">({data.orders.length})</span>
+                </button>
+
+                {data.orders.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("overview");
+                      setSelectedOrderId(o.id);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg text-[11px] font-medium transition truncate flex items-center justify-between ${
+                      selectedOrderId === o.id
+                        ? "bg-black/[0.06] text-[#1D1D1F] font-semibold"
+                        : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.02]"
+                    }`}
+                  >
+                    <span className="truncate">{o.title}</span>
+                    {o.hasShortfall ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="Shortage alert" />
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Healthy runway" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -361,7 +455,7 @@ export default function DashboardClient({ initialData }: Props) {
 
       {/* 2. Main Content Canvas (Right Side) */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Navigation Header (Shows only on mobile screens) */}
+        {/* Mobile Navigation Header */}
         <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-black/[0.06] px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -411,17 +505,65 @@ export default function DashboardClient({ initialData }: Props) {
         {/* Main Content Body */}
         <main className="max-w-6xl mx-auto px-6 py-8 w-full space-y-8 flex-1">
           {/* Active Section Header */}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1D1D1F]">
-              {activeTab === "overview" && "Budget & Forecast"}
-              {activeTab === "approvals" && "Review Work Logs"}
-              {activeTab === "links" && "Contractor Access Links"}
-            </h1>
-            <p className="text-xs text-[#86868B] font-medium mt-1">
-              {activeTab === "overview" && `Tracking burn pace and holiday-adjusted forecast across ${data.orders.length} external contracts`}
-              {activeTab === "approvals" && "Verify contractor daily deliverable hours and approve budget extensions"}
-              {activeTab === "links" && `Create secure workspace access links with configurable hourly rates (€/h)`}
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              {selectedOrder && activeTab === "overview" && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderId("all")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] hover:text-[#0066CC] mb-2 bg-white px-3 py-1.5 rounded-xl border border-black/[0.06] shadow-xs"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to All Projects Overview</span>
+                </button>
+              )}
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1D1D1F]">
+                {activeTab === "overview" && (selectedOrder ? selectedOrder.title : "Budget & Forecast")}
+                {activeTab === "approvals" && "Review Work Logs"}
+                {activeTab === "links" && "Contractor Access Links"}
+              </h1>
+              <p className="text-xs text-[#86868B] font-medium mt-1">
+                {activeTab === "overview" &&
+                  (selectedOrder
+                    ? `Contract ${selectedOrder.orderNumber} · ${selectedOrder.supplierName} · Agreed rate €${selectedOrder.hourlyRate}/h`
+                    : `Portfolio overview across ${data.orders.length} external supplier contracts`)}
+                {activeTab === "approvals" && "Verify contractor daily deliverable hours and approve budget extensions"}
+                {activeTab === "links" && `Create secure workspace access links with configurable hourly rates (€/h)`}
+              </p>
+            </div>
+
+            {/* Quick Project Switcher Pills (in Overview tab) */}
+            {activeTab === "overview" && (
+              <div className="flex flex-wrap items-center gap-1.5 bg-black/[0.04] p-1.5 rounded-2xl border border-black/[0.04] self-start sm:self-auto text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderId("all")}
+                  className={`px-3 py-1.5 rounded-xl transition text-xs font-semibold ${
+                    selectedOrderId === "all"
+                      ? "bg-white text-[#1D1D1F] shadow-xs"
+                      : "text-[#86868B] hover:text-[#1D1D1F]"
+                  }`}
+                >
+                  All Projects
+                </button>
+                {data.orders.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setSelectedOrderId(o.id)}
+                    className={`px-3 py-1.5 rounded-xl transition text-xs font-semibold truncate max-w-[160px] flex items-center gap-1.5 ${
+                      selectedOrderId === o.id
+                        ? "bg-white text-[#1D1D1F] shadow-xs"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                  >
+                    <span className="truncate">{o.title}</span>
+                    {o.hasShortfall && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action Success or Error Notification */}
@@ -441,91 +583,231 @@ export default function DashboardClient({ initialData }: Props) {
 
           {/* TAB 1: BUDGET & FORECAST */}
           {activeTab === "overview" && (
-            <div className="space-y-6">
-              {/* 4 Clean Metric Cards in Plain Language (Days, Hours & Money) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                    <span>Agreed Budget</span>
-                    <span className="text-[10px] bg-black/[0.04] px-2 py-0.5 rounded-md font-semibold text-[#1D1D1F]">
-                      {data.orders.length} Active Contracts
+            <div className="space-y-8">
+              {/* If "All Projects" is selected, show the Interactive Project Boxes Grid First! */}
+              {selectedOrderId === "all" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-[#0071E3]" />
+                        Active Project Contracts
+                      </h2>
+                      <p className="text-xs text-[#86868B] mt-0.5">
+                        Click on any project box below to open its dedicated forecast, early warning radar, and work logs
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold bg-white border border-black/[0.06] px-3 py-1 rounded-full text-[#1D1D1F]">
+                      {data.orders.length} Contracts
                     </span>
                   </div>
-                  <div className="mt-3">
-                    <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                      {data.metrics.totalBudgetDays} <span className="text-base font-medium text-[#86868B]">Days</span>
-                    </div>
-                    <p className="text-xs font-semibold text-[#1D1D1F] mt-1">
-                      €{data.metrics.totalBudgetMoney.toLocaleString()} <span className="text-[#86868B] font-normal">({data.metrics.totalBudgetHours.toLocaleString()} Hours)</span>
-                    </p>
+
+                  {/* Project Cards (Boxes) Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.orders.map((o) => {
+                      const percentUsed = o.totalBudgetDays > 0 ? Math.min(100, Math.round((o.bookedDays / o.totalBudgetDays) * 100)) : 0;
+                      return (
+                        <div
+                          key={o.id}
+                          onClick={() => setSelectedOrderId(o.id)}
+                          className="bg-white rounded-3xl p-6 border border-black/[0.06] hover:border-[#0071E3]/50 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,113,227,0.08)] transition cursor-pointer flex flex-col justify-between space-y-4 group"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-mono text-[#86868B] uppercase tracking-wider block">
+                                {o.orderNumber} · {o.supplierName}
+                              </span>
+                              <h3 className="text-lg font-bold text-[#1D1D1F] group-hover:text-[#0071E3] transition truncate mt-0.5">
+                                {o.title}
+                              </h3>
+                            </div>
+
+                            {/* Status Pill */}
+                            {o.hasShortfall ? (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                Reorder by Wk {o.forecast.reorderDeadlineWeek}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                Runway Healthy
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Metric Numbers */}
+                          <div className="grid grid-cols-3 gap-3 py-2 border-y border-black/[0.04] text-xs">
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Total Budget</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm">{o.totalBudgetDays} Days</span>
+                              <span className="text-[10px] text-[#86868B] block">€{o.totalMoney.toLocaleString()}</span>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Work Logged</span>
+                              <span className="font-extrabold text-[#0071E3] font-mono text-sm">{o.bookedDays} Days</span>
+                              <span className="text-[10px] text-[#86868B] block">€{o.usedMoney.toLocaleString()}</span>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Remaining</span>
+                              <span className="font-extrabold text-emerald-600 font-mono text-sm">{o.remainingDays} Days</span>
+                              <span className="text-[10px] text-[#86868B] block">€{o.leftMoney.toLocaleString()}</span>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar & Footer */}
+                          <div>
+                            <div className="flex items-center justify-between text-[11px] text-[#86868B] mb-1.5">
+                              <span>Budget Usage: {percentUsed}%</span>
+                              <span>Agreed Rate: €{o.hourlyRate}/h</span>
+                            </div>
+                            <div className="w-full bg-[#F5F5F7] h-2 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  o.hasShortfall ? "bg-amber-500" : percentUsed > 80 ? "bg-emerald-600" : "bg-[#0071E3]"
+                                }`}
+                                style={{ width: `${Math.max(2, percentUsed)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-1 flex items-center justify-between text-xs text-[#0071E3] font-semibold">
+                            <span>Open Project Cockpit & Radar</span>
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+              )}
 
-                <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                    <span>Work Completed</span>
-                    <span className="text-[10px] bg-blue-50 text-[#0071E3] px-2 py-0.5 rounded-md font-semibold">
-                      {data.metrics.totalBookedHours}h Logged
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-3xl font-extrabold tracking-tight text-[#0071E3] font-mono tabular-nums">
-                      {data.metrics.totalBookedDays} <span className="text-base font-medium text-[#0071E3]/70">Days</span>
-                    </div>
-                    <p className="text-xs font-semibold text-[#0071E3] mt-1">
-                      €{data.metrics.totalBookedMoney.toLocaleString()} <span className="text-[#86868B] font-normal">spent so far</span>
-                    </p>
-                  </div>
+              {/* Metric Cards (Shows either for the Selected Project or the Overall Portfolio) */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#86868B] uppercase tracking-wider">
+                    {selectedOrder ? `Financial & Time Metrics: ${selectedOrder.title}` : "Enterprise Portfolio Roll-Up"}
+                  </span>
                 </div>
 
-                <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                    <span>Budget Remaining</span>
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-semibold">
-                      Available
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-3xl font-extrabold tracking-tight text-emerald-600 font-mono tabular-nums">
-                      {data.metrics.remainingBudgetDays} <span className="text-base font-medium text-emerald-600/70">Days</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Agreed Budget */}
+                  <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
+                      <span>Agreed Budget</span>
+                      <span className="text-[10px] bg-black/[0.04] px-2 py-0.5 rounded-md font-semibold text-[#1D1D1F]">
+                        {selectedOrder ? `€${selectedOrder.hourlyRate}/h rate` : `${data.orders.length} Contracts`}
+                      </span>
                     </div>
-                    <p className="text-xs font-semibold text-emerald-600 mt-1">
-                      €{data.metrics.remainingBudgetMoney.toLocaleString()} <span className="text-[#86868B] font-normal">({data.metrics.remainingBudgetHours.toLocaleString()} Hours left)</span>
-                    </p>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        {selectedOrder ? selectedOrder.totalBudgetDays : data.metrics.totalBudgetDays}{" "}
+                        <span className="text-base font-medium text-[#86868B]">Days</span>
+                      </div>
+                      <p className="text-xs font-semibold text-[#1D1D1F] mt-1">
+                        €
+                        {(selectedOrder ? selectedOrder.totalMoney : data.metrics.totalBudgetMoney).toLocaleString()}{" "}
+                        <span className="text-[#86868B] font-normal">
+                          ({(selectedOrder ? selectedOrder.totalHours : data.metrics.totalBudgetHours).toLocaleString()} Hours)
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                    <span>When Budget Runs Out</span>
-                    <span className="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md font-semibold">
-                      Order More by Wk 47
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                      {includeShutdown ? "Week 51" : "Week 50"}
+                  {/* Card 2: Work Completed */}
+                  <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
+                      <span>Work Completed</span>
+                      <span className="text-[10px] bg-blue-50 text-[#0071E3] px-2 py-0.5 rounded-md font-semibold">
+                        {selectedOrder ? `${selectedOrder.usedHours}h Logged` : `${data.metrics.totalBookedHours}h Logged`}
+                      </span>
                     </div>
-                    <p className="text-xs font-medium text-[#86868B] mt-1">
-                      Mid-December 2026
-                    </p>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold tracking-tight text-[#0071E3] font-mono tabular-nums">
+                        {selectedOrder ? selectedOrder.bookedDays : data.metrics.totalBookedDays}{" "}
+                        <span className="text-base font-medium text-[#0071E3]/70">Days</span>
+                      </div>
+                      <p className="text-xs font-semibold text-[#0071E3] mt-1">
+                        €
+                        {(selectedOrder ? selectedOrder.usedMoney : data.metrics.totalBookedMoney).toLocaleString()}{" "}
+                        <span className="text-[#86868B] font-normal">spent so far</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Budget Remaining */}
+                  <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
+                      <span>Budget Remaining</span>
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-semibold">
+                        Available
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold tracking-tight text-emerald-600 font-mono tabular-nums">
+                        {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays}{" "}
+                        <span className="text-base font-medium text-emerald-600/70">Days</span>
+                      </div>
+                      <p className="text-xs font-semibold text-emerald-600 mt-1">
+                        €
+                        {(selectedOrder ? selectedOrder.leftMoney : data.metrics.remainingBudgetMoney).toLocaleString()}{" "}
+                        <span className="text-[#86868B] font-normal">
+                          ({(selectedOrder ? selectedOrder.leftHours : data.metrics.remainingBudgetHours).toLocaleString()} Hours left)
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: When Budget Runs Out */}
+                  <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
+                      <span>When Budget Runs Out</span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
+                          (selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
+                            ? "bg-amber-50 text-amber-800"
+                            : "bg-emerald-50 text-emerald-700"
+                        }`}
+                      >
+                        {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
+                          ? `Order More by Wk ${selectedOrder ? selectedOrder.forecast.reorderDeadlineWeek : data.metrics.forecast.reorderDeadlineWeek}`
+                          : "Runway Healthy"}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        {includeShutdown
+                          ? `Week ${selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek}`
+                          : `Week ${Math.max(1, (selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek) - 1)}`}
+                      </div>
+                      <p className="text-xs font-medium text-[#86868B] mt-1">
+                        {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
+                          ? "Mid-December 2026"
+                          : "Fully Funded until completion"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* The Smart Forecaster Card */}
+              {/* The Smart Forecaster Card (Configured for Selected Project or Overall) */}
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-5">
                   <div>
                     <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] mb-1">
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Budget Forecaster</span>
+                      <span>{selectedOrder ? `${selectedOrder.title} · Budget Radar` : "Pace Forecaster"}</span>
                     </div>
                     <h2 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
-                      How Long Will the Budget Last?
+                      {selectedOrder ? `How Long Will ${selectedOrder.title} Last?` : "How Long Will the Budget Last?"}
                     </h2>
                     <p className="text-xs text-[#86868B] mt-0.5">
-                      Calculates the exact date your budget will run out based on how fast contractors are working
+                      {selectedOrder
+                        ? `Projected timeline for PO ${selectedOrder.orderNumber} with ${selectedOrder.supplierName}`
+                        : "Calculates the exact date your budget will run out based on how fast contractors are working"}
                     </p>
                   </div>
 
@@ -544,96 +826,249 @@ export default function DashboardClient({ initialData }: Props) {
                   </div>
                 </div>
 
-                {/* 3 Simple Column Numbers (Days, Hours & Money) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-medium text-[#86868B]">Contractor Working Pace</span>
-                    <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                      {data.metrics.forecast.weeklyBurnRate} Days <span className="text-xs font-normal text-[#86868B]">/ week</span>
-                    </p>
-                    <p className="text-[11px] font-semibold text-[#1D1D1F]">
-                      €{(data.metrics.forecast.weeklyBurnRate * 8 * 100).toLocaleString()} <span className="font-normal text-[#86868B]">({data.metrics.forecast.weeklyBurnRate * 8} Hours / week)</span>
-                    </p>
-                  </div>
+                {/* 3 Simple Column Numbers */}
+                {(() => {
+                  const currentBurnRate = selectedOrder ? selectedOrder.forecast.weeklyBurnRate : data.metrics.forecast.weeklyBurnRate;
+                  const currentRate = selectedOrder ? selectedOrder.hourlyRate : 100;
+                  const currentExhaustion = selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek;
+                  const currentMissingDays = selectedOrder ? selectedOrder.forecast.missingPersonDays : data.metrics.forecast.missingPersonDays;
+                  const currentMissingMoney = selectedOrder ? selectedOrder.missingBudgetMoney : data.metrics.missingBudgetMoney;
+                  const currentMissingHours = selectedOrder ? selectedOrder.missingBudgetHours : data.metrics.missingBudgetHours;
+                  const currentHasShortfall = selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0;
+                  const currentReorderDeadline = selectedOrder ? selectedOrder.forecast.reorderDeadlineWeek : data.metrics.forecast.reorderDeadlineWeek;
 
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-medium text-[#86868B]">Predicted Date Money Runs Out</span>
-                    <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                      {includeShutdown ? "Week 51" : "Week 50"} <span className="text-xs font-normal text-[#86868B]">(mid-Dec 2026)</span>
-                    </p>
-                    <p className="text-[11px] text-[#86868B]">
-                      {includeShutdown
-                        ? "Includes the 2-week Christmas shutdown when no work is billed"
-                        : "Direct pace calculation without holiday break"}
-                    </p>
-                  </div>
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-medium text-[#86868B]">Contractor Working Pace</span>
+                          <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
+                            {currentBurnRate} Days <span className="text-xs font-normal text-[#86868B]">/ week</span>
+                          </p>
+                          <p className="text-[11px] font-semibold text-[#1D1D1F]">
+                            €{(currentBurnRate * 8 * currentRate).toLocaleString()}{" "}
+                            <span className="font-normal text-[#86868B]">({currentBurnRate * 8} Hours / week)</span>
+                          </p>
+                        </div>
 
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-medium text-[#86868B]">
-                      {data.metrics.forecast.missingPersonDays > 0 ? "Shortage until Project Ends (Feb 2027)" : "Budget Status"}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-medium text-[#86868B]">Predicted Date Money Runs Out</span>
+                          <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
+                            {includeShutdown ? `Week ${currentExhaustion}` : `Week ${Math.max(1, currentExhaustion - 1)}`}{" "}
+                            <span className="text-xs font-normal text-[#86868B]">{currentHasShortfall ? "(mid-Dec 2026)" : "(Funded)"}</span>
+                          </p>
+                          <p className="text-[11px] text-[#86868B]">
+                            {includeShutdown
+                              ? "Includes the 2-week Christmas shutdown when no work is billed"
+                              : "Direct pace calculation without holiday break"}
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-medium text-[#86868B]">
+                            {currentHasShortfall ? "Shortage until Project Ends (Feb 2027)" : "Budget Status"}
+                          </span>
+                          {currentHasShortfall ? (
+                            <>
+                              <p className="text-2xl font-bold text-[#FF3B30] font-mono tabular-nums">
+                                ≈ {currentMissingDays} Days Short
+                              </p>
+                              <p className="text-[11px] font-semibold text-[#FF3B30]">
+                                €{currentMissingMoney.toLocaleString()} Extra Needed{" "}
+                                <span className="font-normal text-[#86868B]">({currentMissingHours} Hours)</span>
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-2xl font-bold text-emerald-600 font-mono tabular-nums">Fully Funded</p>
+                              <p className="text-[11px] font-semibold text-emerald-700">
+                                0 Days Shortage{" "}
+                                <span className="font-normal text-[#86868B]">
+                                  ({selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days available)
+                                </span>
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Early Warning Banner & 1-Click Request */}
+                      {currentHasShortfall ? (
+                        <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                              <Clock className="w-4 h-4 text-amber-600" />
+                              <span>4-Week Early Warning: Must request more budget by Week {currentReorderDeadline}</span>
+                            </div>
+                            <p className="text-xs text-amber-800">
+                              Purchasing takes 4 weeks to approve paperwork. You must request extra budget before Week{" "}
+                              {currentReorderDeadline} so contractors do not stop working.
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCreateReorderProposal(selectedOrder?.id, currentMissingDays)}
+                            disabled={isPending}
+                            className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {isPending
+                              ? "Submitting..."
+                              : `Submit Purchasing Reorder (+€${currentMissingMoney.toLocaleString()})`}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              <span>Budget Runway Healthy: No Shortage Detected</span>
+                            </div>
+                            <p className="text-xs text-emerald-800">
+                              Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not
+                              needed at this time.
+                            </p>
+                          </div>
+                          <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full shrink-0">
+                            ✅ Runway Healthy
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* If a Specific Project is Selected, show its specific work logs right below */}
+              {selectedOrder && (
+                <div className="bg-white rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
+                  <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-[#1D1D1F] text-base flex items-center gap-2">
+                        <FileCheck className="w-4 h-4 text-[#0071E3]" />
+                        Work Logs for {selectedOrder.title}
+                      </h3>
+                      <p className="text-xs text-[#86868B] mt-0.5">
+                        Deliverable history submitted by {selectedOrder.supplierName} under PO {selectedOrder.orderNumber}
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold bg-black/[0.05] text-[#1D1D1F] px-3 py-1 rounded-full">
+                      {filteredBookings.length} Submissions
                     </span>
-                    {data.metrics.forecast.missingPersonDays > 0 ? (
-                      <>
-                        <p className="text-2xl font-bold text-[#FF3B30] font-mono tabular-nums">
-                          ≈ {data.metrics.forecast.missingPersonDays} Days Short
-                        </p>
-                        <p className="text-[11px] font-semibold text-[#FF3B30]">
-                          €{data.metrics.missingBudgetMoney.toLocaleString()} Extra Needed <span className="font-normal text-[#86868B]">({data.metrics.missingBudgetHours} Hours)</span>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-2xl font-bold text-emerald-600 font-mono tabular-nums">
-                          Fully Funded
-                        </p>
-                        <p className="text-[11px] font-semibold text-emerald-700">
-                          0 Days Shortage <span className="font-normal text-[#86868B]">({data.metrics.remainingBudgetDays} Days / {data.metrics.remainingBudgetHours}h available)</span>
-                        </p>
-                      </>
-                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F5F5F7] text-[#86868B] font-semibold border-b border-black/[0.06]">
+                        <tr>
+                          <th className="py-3.5 px-5">Date</th>
+                          <th className="py-3.5 px-5">Specialist Name</th>
+                          <th className="py-3.5 px-5 text-right">Time Worked</th>
+                          <th className="py-3.5 px-5">What Was Delivered</th>
+                          <th className="py-3.5 px-5">Status</th>
+                          <th className="py-3.5 px-5 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/[0.04]">
+                        {filteredBookings.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-[#86868B]">
+                              No work logs submitted yet for this contract. Share the contractor access link to start logging deliverables.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredBookings.map((b) => (
+                            <tr key={b.id} className="hover:bg-[#F5F5F7]/50 transition">
+                              <td className="py-3.5 px-5 font-mono text-[#86868B]">{b.date}</td>
+                              <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.consultantName}</td>
+                              <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
+                                {b.hours}h ({b.personDays} Days)
+                                <div className="text-[10px] font-normal text-[#86868B]">€{b.moneyEur.toLocaleString()}</div>
+                              </td>
+                              <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
+                              <td className="py-3.5 px-5">
+                                {b.status === "approved" && (
+                                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    Approved
+                                  </span>
+                                )}
+                                {b.status === "submitted" && (
+                                  <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0071E3] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                                    <Clock className="w-3 h-3 text-[#0071E3]" />
+                                    Needs Review
+                                  </span>
+                                )}
+                                {b.status === "extension_requested" && (
+                                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                                    <Zap className="w-3 h-3 text-amber-600" />
+                                    Extension Requested
+                                  </span>
+                                )}
+                                {b.status === "rejected" && (
+                                  <span
+                                    className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]"
+                                    title={b.rejectionReason || ""}
+                                  >
+                                    <AlertCircle className="w-3 h-3 text-rose-600" />
+                                    Rejected
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-5 text-center">
+                                {b.status === "extension_requested" ? (
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApprove(b.id)}
+                                      disabled={isPending}
+                                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs flex items-center gap-1"
+                                      title="Approves extension and adds hours directly to contract budget"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                      Approve +{b.hours}h
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReject(b.id)}
+                                      disabled={isPending}
+                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : b.status === "submitted" ? (
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApprove(b.id)}
+                                      disabled={isPending}
+                                      className="bg-[#0071E3] hover:bg-[#0066CC] text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReject(b.id)}
+                                      disabled={isPending}
+                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] text-[#86868B]">Completed</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-
-                {/* Early Warning Banner & 1-Click Request */}
-                {data.metrics.forecast.missingPersonDays > 0 ? (
-                  <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                        <Clock className="w-4 h-4 text-amber-600" />
-                        <span>4-Week Early Warning: Must request more budget by Week {data.metrics.forecast.reorderDeadlineWeek}</span>
-                      </div>
-                      <p className="text-xs text-amber-800">
-                        Purchasing takes 4 weeks to approve paperwork. You must request extra budget before Week {data.metrics.forecast.reorderDeadlineWeek} so contractors do not stop working.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleCreateReorderProposal}
-                      disabled={isPending}
-                      className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {isPending ? "Submitting..." : `Request Extra €${data.metrics.missingBudgetMoney.toLocaleString()} (${data.metrics.forecast.missingPersonDays} Days)`}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Budget Runway Healthy: No Shortage Detected</span>
-                      </div>
-                      <p className="text-xs text-emerald-800">
-                        Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not needed at this time.
-                      </p>
-                    </div>
-                    <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full shrink-0">
-                      ✅ Runway Healthy
-                    </span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           )}
 
@@ -680,6 +1115,7 @@ export default function DashboardClient({ initialData }: Props) {
                         <td className="py-3.5 px-5 text-[#86868B]">{b.consultantName}</td>
                         <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
                           {b.hours}h ({b.personDays} Days)
+                          <div className="text-[10px] font-normal text-[#86868B]">€{b.moneyEur.toLocaleString()}</div>
                         </td>
                         <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
                         <td className="py-3.5 px-5">
@@ -962,10 +1398,20 @@ export default function DashboardClient({ initialData }: Props) {
                               {o.supplierName}
                             </td>
                             <td className="py-3.5 px-5 text-[#86868B]">
-                              {o.title}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab("overview");
+                                  setSelectedOrderId(o.id);
+                                }}
+                                className="hover:text-[#0071E3] hover:underline font-medium text-left"
+                              >
+                                {o.title}
+                              </button>
                             </td>
                             <td className="py-3.5 px-5 text-right font-mono font-semibold text-[#1D1D1F]">
                               {o.totalBudgetDays} Days
+                              <div className="text-[10px] font-normal text-[#86868B]">€{o.totalMoney.toLocaleString()}</div>
                             </td>
                             <td className="py-3.5 px-5 text-right font-mono font-medium text-[#86868B]">
                               <span className="text-[#0071E3]">{o.bookedDays} Days</span> / <span className="text-emerald-600">{o.remainingDays} Days</span>
