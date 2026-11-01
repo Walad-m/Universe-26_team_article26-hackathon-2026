@@ -82,7 +82,7 @@ export async function loginUser(
  * 1-Click Juror / Evaluator fast login as Project Lead
  */
 export async function quickLoginAsLead() {
-  const result = await loginUser("lead@client.de", "password123");
+  const result = await loginUser("lead@client.de", "password");
   if (result.success && result.redirectUrl) {
     redirect(result.redirectUrl);
   }

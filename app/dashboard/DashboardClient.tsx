@@ -272,7 +272,7 @@ export default function DashboardClient({ initialData }: Props) {
     : data.bookings;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col md:flex-row antialiased selection:bg-[#1D1D1F] selection:text-white">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col md:flex-row antialiased selection:bg-[#0071E3] selection:text-white">
       {/* 1. Sleek Apple-Style Left Sidebar (Desktop) */}
       <aside className="w-64 lg:w-72 bg-white/95 backdrop-blur-md border-r border-black/[0.06] flex-col justify-between h-screen sticky top-0 shrink-0 z-40 hidden md:flex">
         {/* Brand & Organization */}
@@ -287,7 +287,7 @@ export default function DashboardClient({ initialData }: Props) {
                   {data.currentUser.companyName}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <p className="text-[10px] font-semibold text-[#86868B] uppercase tracking-wider">
                     Client Organization
                   </p>
@@ -339,7 +339,7 @@ export default function DashboardClient({ initialData }: Props) {
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     activeTab === "approvals"
                       ? "bg-white text-[#1D1D1F]"
-                      : "bg-[#1D1D1F] text-white"
+                      : "bg-[#0071E3] text-white"
                   }`}
                 >
                   {pendingBookingsCount}
@@ -410,7 +410,7 @@ export default function DashboardClient({ initialData }: Props) {
                     {o.hasShortfall ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="Shortage alert" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F] shrink-0" title="Healthy runway" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Healthy runway" />
                     )}
                   </button>
                 ))}
@@ -527,7 +527,7 @@ export default function DashboardClient({ initialData }: Props) {
                 {activeTab === "overview" &&
                   (selectedOrder
                     ? `Contract ${selectedOrder.orderNumber} · ${selectedOrder.supplierName} · Agreed rate €${selectedOrder.hourlyRate}/h`
-                    : `Portfolio overview across ${data.orders.length} external supplier contracts`)}
+                    : `Tracking burn pace and holiday-adjusted forecast across ${data.orders.length} external contracts`)}
                 {activeTab === "approvals" && "Verify contractor daily deliverable hours and approve budget extensions"}
                 {activeTab === "links" && `Create secure workspace access links with configurable hourly rates (€/h)`}
               </p>
@@ -562,7 +562,7 @@ export default function DashboardClient({ initialData }: Props) {
                     {o.hasShortfall ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#1D1D1F]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     )}
                   </button>
                 ))}
@@ -572,8 +572,8 @@ export default function DashboardClient({ initialData }: Props) {
 
           {/* Action Success or Error Notification */}
           {actionSuccess && (
-            <div className="p-3.5 bg-black/[0.04] border border-black/[0.08] rounded-2xl text-xs text-[#1D1D1F] flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#1D1D1F] shrink-0" />
+            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl text-xs text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="font-semibold">{actionSuccess}</span>
             </div>
           )}
@@ -588,108 +588,7 @@ export default function DashboardClient({ initialData }: Props) {
           {/* TAB 1: BUDGET & FORECAST */}
           {activeTab === "overview" && (
             <div className="space-y-8">
-              {/* If "All Projects" is selected, show the Interactive Project Boxes Grid First! */}
-              {selectedOrderId === "all" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
-                        <FolderKanban className="w-4 h-4 text-[#1D1D1F]" />
-                        Active Project Contracts
-                      </h2>
-                      <p className="text-xs text-[#86868B] mt-0.5">
-                        Click on any project box below to open its dedicated forecast, early warning radar, and work logs
-                      </p>
-                    </div>
-                    <span className="text-xs font-semibold bg-white border border-black/[0.06] px-3 py-1 rounded-full text-[#1D1D1F]">
-                      {data.orders.length} Contracts
-                    </span>
-                  </div>
-
-                  {/* Project Cards (Boxes) Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {data.orders.map((o) => {
-                      const percentUsed = o.totalBudgetDays > 0 ? Math.min(100, Math.round((o.bookedDays / o.totalBudgetDays) * 100)) : 0;
-                      return (
-                        <div
-                          key={o.id}
-                          onClick={() => setSelectedOrderId(o.id)}
-                          className="bg-white rounded-3xl p-6 border border-black/[0.06] hover:border-black/30 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition cursor-pointer flex flex-col justify-between space-y-4 group"
-                        >
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <span className="text-[10px] font-mono text-[#86868B] uppercase tracking-wider block">
-                                {o.orderNumber} · {o.supplierName}
-                              </span>
-                              <h3 className="text-lg font-bold text-[#1D1D1F] group-hover:text-black transition truncate mt-0.5">
-                                {o.title}
-                              </h3>
-                            </div>
-
-                            {/* Status Pill */}
-                            {o.hasShortfall ? (
-                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
-                                <Clock className="w-3 h-3 text-amber-600" />
-                                Reorder by Wk {o.forecast.reorderDeadlineWeek}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
-                                <Check className="w-3 h-3 text-[#1D1D1F]" />
-                                Runway Healthy
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Metric Numbers: Money on Top, Days on Bottom */}
-                          <div className="grid grid-cols-3 gap-3 py-2 border-y border-black/[0.04] text-xs">
-                            <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Total Budget</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.totalMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.totalBudgetDays} Days · {o.totalHours}h</span>
-                            </div>
-
-                            <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Work Logged</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.usedMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.bookedDays} Days · {o.usedHours}h</span>
-                            </div>
-
-                            <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Remaining</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.leftMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.remainingDays} Days · {o.leftHours}h</span>
-                            </div>
-                          </div>
-
-                          {/* Progress Bar & Footer */}
-                          <div>
-                            <div className="flex items-center justify-between text-[11px] text-[#86868B] mb-1.5">
-                              <span>Budget Usage: {percentUsed}%</span>
-                              <span>Agreed Rate: €{o.hourlyRate}/h</span>
-                            </div>
-                            <div className="w-full bg-[#F5F5F7] h-2 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                  o.hasShortfall ? "bg-amber-500" : "bg-[#1D1D1F]"
-                                }`}
-                                style={{ width: `${Math.max(2, percentUsed)}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="pt-1 flex items-center justify-between text-xs text-[#1D1D1F] font-semibold group-hover:underline">
-                            <span>Open Project Cockpit & Radar</span>
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Metric Cards: Unified Clean Monochrome, Money on Top, Days on Bottom */}
+              {/* SECTION A: THE 4 EXECUTIVE METRIC CARDS (Always at the Top!) */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-[#86868B] uppercase tracking-wider">
@@ -703,7 +602,7 @@ export default function DashboardClient({ initialData }: Props) {
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
                       <span>Agreed Budget</span>
                       <span className="text-[10px] bg-black/[0.04] px-2 py-0.5 rounded-md font-semibold text-[#1D1D1F]">
-                        {selectedOrder ? `€${selectedOrder.hourlyRate}/h rate` : `${data.orders.length} Contracts`}
+                        {selectedOrder ? `€${selectedOrder.hourlyRate}/h rate` : `${data.orders.length} Active Contracts`}
                       </span>
                     </div>
                     <div className="mt-3">
@@ -762,8 +661,8 @@ export default function DashboardClient({ initialData }: Props) {
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
                           (selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
-                            ? "bg-amber-50 text-amber-800"
-                            : "bg-black/[0.04] text-[#1D1D1F]"
+                            ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                         }`}
                       >
                         {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
@@ -787,11 +686,11 @@ export default function DashboardClient({ initialData }: Props) {
                 </div>
               </div>
 
-              {/* The Smart Forecaster Card (Configured for Selected Project or Overall) */}
+              {/* SECTION B: THE SMART FORECASTER CARD (Pace & Runway Radar) */}
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/[0.06] pb-5">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F] mb-1">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] mb-1">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>{selectedOrder ? `${selectedOrder.title} · Budget Radar` : "Pace Forecaster"}</span>
                     </div>
@@ -815,7 +714,7 @@ export default function DashboardClient({ initialData }: Props) {
                       type="checkbox"
                       checked={includeShutdown}
                       onChange={(e) => setIncludeShutdown(e.target.checked)}
-                      className="w-4 h-4 accent-[#1D1D1F] rounded cursor-pointer"
+                      className="w-4 h-4 accent-[#0071E3] rounded cursor-pointer"
                     />
                   </div>
                 </div>
@@ -909,19 +808,19 @@ export default function DashboardClient({ initialData }: Props) {
                           </button>
                         </div>
                       ) : (
-                        <div className="bg-black/[0.02] border border-black/[0.06] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-xs font-bold text-[#1D1D1F]">
-                              <Check className="w-4 h-4 text-[#1D1D1F]" />
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                              <Check className="w-4 h-4 text-emerald-600" />
                               <span>Budget Runway Healthy: No Shortage Detected</span>
                             </div>
-                            <p className="text-xs text-[#86868B]">
+                            <p className="text-xs text-emerald-800">
                               Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not
                               needed at this time.
                             </p>
                           </div>
-                          <span className="text-xs font-semibold px-3 py-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] rounded-full shrink-0 flex items-center gap-1.5">
-                            <Check className="w-3.5 h-3.5 text-[#1D1D1F]" /> Runway Healthy
+                          <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full shrink-0 flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-emerald-600" /> Runway Healthy
                           </span>
                         </div>
                       )}
@@ -930,13 +829,114 @@ export default function DashboardClient({ initialData }: Props) {
                 })()}
               </div>
 
-              {/* If a Specific Project is Selected, show its specific work logs right below */}
+              {/* SECTION C: ACTIVE PROJECT CONTRACTS BOXES GRID (When All Projects is viewed) */}
+              {selectedOrderId === "all" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-[#0071E3]" />
+                        Active Project Contracts
+                      </h2>
+                      <p className="text-xs text-[#86868B] mt-0.5">
+                        Click on any project box below to open its dedicated forecast, early warning radar, and work logs
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold bg-white border border-black/[0.06] px-3 py-1 rounded-full text-[#1D1D1F]">
+                      {data.orders.length} Contracts
+                    </span>
+                  </div>
+
+                  {/* Project Cards (Boxes) Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.orders.map((o) => {
+                      const percentUsed = o.totalBudgetDays > 0 ? Math.min(100, Math.round((o.bookedDays / o.totalBudgetDays) * 100)) : 0;
+                      return (
+                        <div
+                          key={o.id}
+                          onClick={() => setSelectedOrderId(o.id)}
+                          className="bg-white rounded-3xl p-6 border border-black/[0.06] hover:border-[#0071E3]/50 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_20px_rgba(0,113,227,0.08)] transition cursor-pointer flex flex-col justify-between space-y-4 group"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-mono text-[#86868B] uppercase tracking-wider block">
+                                {o.orderNumber} · {o.supplierName}
+                              </span>
+                              <h3 className="text-lg font-bold text-[#1D1D1F] group-hover:text-[#0071E3] transition truncate mt-0.5">
+                                {o.title}
+                              </h3>
+                            </div>
+
+                            {/* Status Pill */}
+                            {o.hasShortfall ? (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                Reorder by Wk {o.forecast.reorderDeadlineWeek}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                Runway Healthy
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Metric Numbers: Money on Top, Days on Bottom */}
+                          <div className="grid grid-cols-3 gap-3 py-2 border-y border-black/[0.04] text-xs">
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Total Budget</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.totalMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.totalBudgetDays} Days · {o.totalHours}h</span>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Work Logged</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.usedMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.bookedDays} Days · {o.usedHours}h</span>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] text-[#86868B] font-medium block">Remaining</span>
+                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.leftMoney.toLocaleString()}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.remainingDays} Days · {o.leftHours}h</span>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar & Footer */}
+                          <div>
+                            <div className="flex items-center justify-between text-[11px] text-[#86868B] mb-1.5">
+                              <span>Budget Usage: {percentUsed}%</span>
+                              <span>Agreed Rate: €{o.hourlyRate}/h</span>
+                            </div>
+                            <div className="w-full bg-[#F5F5F7] h-2 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  o.hasShortfall ? "bg-amber-500" : "bg-[#1D1D1F]"
+                                }`}
+                                style={{ width: `${Math.max(2, percentUsed)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-1 flex items-center justify-between text-xs text-[#0071E3] font-semibold group-hover:underline">
+                            <span>Open Project Cockpit & Radar</span>
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION D: SPECIFIC PROJECT WORK LOGS (When a Project is Selected) */}
               {selectedOrder && (
                 <div className="bg-white rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] overflow-hidden">
                   <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
                     <div>
                       <h3 className="font-bold text-[#1D1D1F] text-base flex items-center gap-2">
-                        <FileCheck className="w-4 h-4 text-[#1D1D1F]" />
+                        <FileCheck className="w-4 h-4 text-[#0071E3]" />
                         Work Logs for {selectedOrder.title}
                       </h3>
                       <p className="text-xs text-[#86868B] mt-0.5">
@@ -979,8 +979,8 @@ export default function DashboardClient({ initialData }: Props) {
                               <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
                               <td className="py-3.5 px-5">
                                 {b.status === "approved" && (
-                                  <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
-                                    <Check className="w-3 h-3 text-[#1D1D1F]" />
+                                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                                    <Check className="w-3 h-3 text-emerald-600" />
                                     Approved
                                   </span>
                                 )}
@@ -1013,7 +1013,7 @@ export default function DashboardClient({ initialData }: Props) {
                                       type="button"
                                       onClick={() => handleApprove(b.id)}
                                       disabled={isPending}
-                                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs flex items-center gap-1"
+                                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3.5 py-1 rounded-full transition shadow-xs flex items-center gap-1"
                                       title="Approves extension and adds hours directly to contract budget"
                                     >
                                       <Check className="w-3 h-3" />
@@ -1023,7 +1023,7 @@ export default function DashboardClient({ initialData }: Props) {
                                       type="button"
                                       onClick={() => handleReject(b.id)}
                                       disabled={isPending}
-                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
                                     >
                                       Reject
                                     </button>
@@ -1098,7 +1098,7 @@ export default function DashboardClient({ initialData }: Props) {
                       <tr key={b.id} className="hover:bg-[#F5F5F7]/50 transition">
                         <td className="py-3.5 px-5 font-mono text-[#86868B]">{b.date}</td>
                         <td className="py-3.5 px-5">
-                          <span className="font-mono font-semibold text-[#1D1D1F]">{b.orderNumber}</span>
+                          <span className="font-mono font-semibold text-[#0071E3]">{b.orderNumber}</span>
                           <div className="text-[11px] text-[#86868B] truncate max-w-xs">{b.orderTitle}</div>
                         </td>
                         <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.supplierName}</td>
@@ -1110,8 +1110,8 @@ export default function DashboardClient({ initialData }: Props) {
                         <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
                         <td className="py-3.5 px-5">
                           {b.status === "approved" && (
-                            <span className="inline-flex items-center gap-1 bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
-                              <Check className="w-3 h-3 text-[#1D1D1F]" />
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
+                              <Check className="w-3 h-3 text-emerald-600" />
                               Approved
                             </span>
                           )}
@@ -1141,7 +1141,7 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleApprove(b.id)}
                                 disabled={isPending}
-                                className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs flex items-center gap-1"
+                                className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3.5 py-1 rounded-full transition shadow-xs flex items-center gap-1"
                                 title="Approves extension and adds hours directly to contract budget"
                               >
                                 <Check className="w-3 h-3" />
@@ -1151,7 +1151,7 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleReject(b.id)}
                                 disabled={isPending}
-                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
                               >
                                 Reject
                               </button>
@@ -1217,7 +1217,7 @@ export default function DashboardClient({ initialData }: Props) {
                       <button
                         type="button"
                         onClick={() => handleCopy("new", newlyGeneratedUrl)}
-                        className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 transition inline-flex items-center gap-1"
+                        className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-1.5 rounded-full shrink-0 transition inline-flex items-center gap-1"
                       >
                         {copiedToken === "new" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                         {copiedToken === "new" ? "Copied" : "Copy Link"}
@@ -1238,7 +1238,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setExternalCompanyName(e.target.value)}
                         placeholder="e.g. KGL Group or Agency Alpha"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                     </div>
 
@@ -1252,7 +1252,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setProjectName(e.target.value)}
                         placeholder="e.g. Hostel for student"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1268,7 +1268,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setOrderNumber(e.target.value)}
                         placeholder="e.g. PO-4500012345"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                     </div>
 
@@ -1284,7 +1284,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setBudgetDays(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="140"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                       <span className="text-[10px] text-[#86868B] mt-1 block">
                         1 Day = 8 hours
@@ -1304,7 +1304,7 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setHourlyRate(e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="100"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                       <span className="text-[10px] text-[#86868B] mt-1 block">
                         Standard German IT: €100/h
@@ -1319,7 +1319,7 @@ export default function DashboardClient({ initialData }: Props) {
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1381,7 +1381,7 @@ export default function DashboardClient({ initialData }: Props) {
                           : `/portal/${o.portalToken}`;
                         return (
                           <tr key={o.id} className="hover:bg-[#F5F5F7]/50 transition">
-                            <td className="py-3.5 px-5 font-mono font-semibold text-[#1D1D1F]">
+                            <td className="py-3.5 px-5 font-mono font-semibold text-[#0071E3]">
                               {o.orderNumber}
                             </td>
                             <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">
@@ -1394,7 +1394,7 @@ export default function DashboardClient({ initialData }: Props) {
                                   setActiveTab("overview");
                                   setSelectedOrderId(o.id);
                                 }}
-                                className="hover:text-black hover:underline font-medium text-left"
+                                className="hover:text-[#0071E3] hover:underline font-medium text-left"
                               >
                                 {o.title}
                               </button>
@@ -1415,9 +1415,9 @@ export default function DashboardClient({ initialData }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => handleCopy(o.id, url)}
-                                  className="text-[11px] font-medium bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] border border-black/[0.08] px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1 shrink-0"
+                                  className="text-[11px] font-medium bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] border border-black/[0.08] px-3 py-1 rounded-full transition inline-flex items-center gap-1 shrink-0"
                                 >
-                                  {copiedToken === o.id ? <Check className="w-3 h-3 text-[#1D1D1F]" /> : <Copy className="w-3 h-3 text-[#86868B]" />}
+                                  {copiedToken === o.id ? <Check className="w-3 h-3 text-[#0071E3]" /> : <Copy className="w-3 h-3 text-[#86868B]" />}
                                   {copiedToken === o.id ? "Copied" : "Copy"}
                                 </button>
                               </div>

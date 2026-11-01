@@ -32,7 +32,7 @@ We chose **Option C: Apple-Inspired Minimalist Design System** with the followin
 
 1. **Single Interactive Accent (#0071E3 Apple Blue):**
    - The canvas is neutral monochrome (`#F5F5F7` background, pure white `#FFFFFF` cards, `#1D1D1F` headlines, `#86868B` metadata).
-   - Apple Blue (`#0071E3`) is strictly reserved for primary user actions (CTAs), active focus tabs, and interactive navigation links. Green is eliminated from status badges, replacing it with subtle neutral monochrome badges (`bg-black/[0.04] text-[#1D1D1F]`).
+   - Apple Blue (`#0071E3`) is strictly reserved for primary user actions (CTAs), active focus tabs, and interactive navigation links. Subtle light green (`emerald-50` with `emerald-700` text) is used intentionally for positive status confirmations ("Approved" deliverables and "Runway Healthy"), avoiding visual clutter while preserving immediate semantic clarity. Amber is used for reorder alerts, and rose for rejections.
 2. **Dual-Pill Action Architecture:**
    - Primary Action: Solid Apple Blue pill (`bg-[#0071E3] text-white rounded-full font-semibold shadow-xs hover:bg-[#0077ED]`).
    - Secondary Action: Ghost outline pill (`border border-[#0071E3] text-[#0071E3] rounded-full hover:bg-[#0071E3]/5`).
@@ -50,3 +50,4 @@ We chose **Option C: Apple-Inspired Minimalist Design System** with the followin
 - **What becomes easier:** The user experience is calm, legible, and immediately conveys high executive polish to the jury. Both Project Leads and contractors understand their metrics at a single glance.
 - **What becomes harder:** Developers must adhere to the design system and avoid adding one-off colors for status indicators. Amber is preserved strictly for urgent reorder alerts (shortages).
 - **Next steps:** Apply the pill button patterns and bento cards consistently across Landing Page, Dashboard, and Contractor Portal.
+
