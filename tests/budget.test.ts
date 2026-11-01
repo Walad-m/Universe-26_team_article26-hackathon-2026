@@ -7,6 +7,7 @@ import {
   validateCumulativeDailyHours,
   calculateWeeklyBurnRate,
   calculateBudgetForecast,
+  calculateHolidayAdjustedForecast,
 } from "../app/domain/budget";
 
 describe("Orvix Business Rules & Budget Engine", () => {
@@ -127,5 +128,53 @@ describe("Orvix Business Rules & Budget Engine", () => {
       expect(forecast.status).toBe("critical");
     });
   });
-});
 
+  describe("Rule 4: Challenge Scenario (German Holidays, Christmas Shutdown & Reorder Planning)", () => {
+    it("calculates challenge scenario forecast accurately (140 PD total, 56 remaining, 6 PD/wk)", () => {
+      // From docs/challenge.md lines 36-47:
+      // Remaining: 56 PD, Burn: 6 PD/wk.
+      // With Christmas shutdown -> week 51.
+      // Missing until project end: ~31 Person-Days.
+      // Order more by: week 47 (4-week lead time).
+      const forecast = calculateHolidayAdjustedForecast({
+        remainingDays: 56.0,
+        weeklyBurnRate: 6.0,
+        currentCalendarWeek: 42,
+        targetProjectWeeks: 14.5,
+        includeChristmasShutdown: true,
+        reorderLeadWeeks: 4,
+      });
+
+      expect(forecast.exhaustionWeek).toBe(52); // KW 51/52 boundary
+      expect(forecast.reorderDeadlineWeek).toBe(48);
+      expect(forecast.missingPersonDays).toBe(31.0); // exactly 31 PD missing!
+    });
+
+    it("adjusts exhaustion one week earlier when Christmas shutdown is disabled", () => {
+      const withShutdown = calculateHolidayAdjustedForecast({
+        remainingDays: 56.0,
+        weeklyBurnRate: 6.0,
+        includeChristmasShutdown: true,
+      });
+
+      const withoutShutdown = calculateHolidayAdjustedForecast({
+        remainingDays: 56.0,
+        weeklyBurnRate: 6.0,
+        includeChristmasShutdown: false,
+      });
+
+      expect(withoutShutdown.exhaustionWeek).toBe(withShutdown.exhaustionWeek - 1);
+    });
+
+    it("triggers reorder alert when remaining budget is within 4-week lead time", () => {
+      const urgentForecast = calculateHolidayAdjustedForecast({
+        remainingDays: 20.0,
+        weeklyBurnRate: 6.0, // ~3.3 weeks left
+        reorderLeadWeeks: 4,
+      });
+
+      expect(urgentForecast.reorderAlertTriggered).toBe(true);
+      expect(urgentForecast.status).toBe("warning");
+    });
+  });
+});
