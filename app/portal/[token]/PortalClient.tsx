@@ -251,9 +251,9 @@ export default function PortalClient({ initialData, currentUser }: Props) {
             <button
               type="button"
               onClick={() => setShowExtensionForm(!showExtensionForm)}
-              className="text-xs font-semibold text-[#1D1D1F] hover:text-black bg-black/[0.04] hover:bg-black/[0.08] border border-black/[0.08] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 self-start sm:self-auto"
+              className="text-xs font-semibold text-[#0071E3] hover:text-[#0077ED] bg-white border border-[#0071E3] hover:bg-[#0071E3]/5 px-4 py-2 rounded-full transition flex items-center gap-1.5 self-start sm:self-auto"
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 text-[#0071E3]" />
               <span>Need Budget Extension?</span>
               {showExtensionForm ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
@@ -326,14 +326,14 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-xs"
+                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-5 py-2 rounded-full transition shadow-xs"
                   >
                     {isPending ? "Sending..." : "Submit Extension Request"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowExtensionForm(false)}
-                    className="text-xs text-[#86868B] hover:text-[#1D1D1F] px-3 py-2"
+                    className="text-xs text-[#86868B] hover:text-[#1D1D1F] px-4 py-2 rounded-full border border-black/[0.08]"
                   >
                     Cancel
                   </button>
@@ -401,17 +401,17 @@ export default function PortalClient({ initialData, currentUser }: Props) {
                   required
                   className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#1D1D1F] focus:bg-white focus:outline-none font-mono"
                 />
-                {/* Fast hour selection chips */}
+                {/* Fast hour selection chips (Apple Pills) */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {[2, 3.5, 4, 6, 8, 10].map((h) => (
                     <button
                       key={h}
                       type="button"
                       onClick={() => setHours(h)}
-                      className={`text-[10px] px-2 py-0.5 rounded-md border transition ${
+                      className={`text-[10px] px-3 py-1 rounded-full border transition ${
                         hours === h
-                          ? "bg-[#1D1D1F] text-white border-[#1D1D1F] font-semibold"
-                          : "bg-white text-[#86868B] border-black/[0.08] hover:border-black/[0.2] hover:text-[#1D1D1F]"
+                          ? "bg-[#0071E3] text-white border-[#0071E3] font-semibold"
+                          : "bg-white text-[#86868B] border-black/[0.08] hover:border-[#0071E3]/30 hover:text-[#1D1D1F]"
                       }`}
                     >
                       {h}h
@@ -441,7 +441,7 @@ export default function PortalClient({ initialData, currentUser }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="bg-[#1D1D1F] hover:bg-black disabled:bg-[#86868B] text-white font-semibold py-2.5 px-5 rounded-xl text-xs transition shadow-xs inline-flex items-center gap-2"
+              className="bg-[#0071E3] hover:bg-[#0077ED] disabled:bg-[#86868B] text-white font-semibold py-2.5 px-6 rounded-full text-xs transition shadow-xs inline-flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               {isPending ? "Submitting..." : "Submit Work to Client"}

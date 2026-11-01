@@ -79,6 +79,16 @@ export async function loginUser(
 }
 
 /**
+ * 1-Click Juror / Evaluator fast login as Project Lead
+ */
+export async function quickLoginAsLead() {
+  const result = await loginUser("lead@client.de", "password123");
+  if (result.success && result.redirectUrl) {
+    redirect(result.redirectUrl);
+  }
+}
+
+/**
  * Registers a new organization and primary administrative user account
  */
 export async function registerOrganizationUser(data: {
@@ -156,4 +166,3 @@ export async function logoutUser() {
   cookieStore.delete(SESSION_COOKIE_NAME);
   redirect("/login");
 }
-

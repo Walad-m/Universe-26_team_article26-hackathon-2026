@@ -511,7 +511,7 @@ export default function DashboardClient({ initialData }: Props) {
                 <button
                   type="button"
                   onClick={() => setSelectedOrderId("all")}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F] hover:text-black mb-2 bg-white px-3 py-1.5 rounded-xl border border-black/[0.08] shadow-xs"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] hover:text-[#0077ED] mb-2 bg-white px-3.5 py-1.5 rounded-full border border-black/[0.08] shadow-xs transition"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to All Projects Overview</span>
@@ -535,11 +535,11 @@ export default function DashboardClient({ initialData }: Props) {
 
             {/* Quick Project Switcher Pills (in Overview tab) */}
             {activeTab === "overview" && (
-              <div className="flex flex-wrap items-center gap-1.5 bg-black/[0.04] p-1.5 rounded-2xl border border-black/[0.04] self-start sm:self-auto text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 bg-black/[0.04] p-1.5 rounded-full border border-black/[0.04] self-start sm:self-auto text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedOrderId("all")}
-                  className={`px-3 py-1.5 rounded-xl transition text-xs font-semibold ${
+                  className={`px-3.5 py-1.5 rounded-full transition text-xs font-semibold ${
                     selectedOrderId === "all"
                       ? "bg-white text-[#1D1D1F] shadow-xs"
                       : "text-[#86868B] hover:text-[#1D1D1F]"
@@ -552,7 +552,7 @@ export default function DashboardClient({ initialData }: Props) {
                     key={o.id}
                     type="button"
                     onClick={() => setSelectedOrderId(o.id)}
-                    className={`px-3 py-1.5 rounded-xl transition text-xs font-semibold truncate max-w-[160px] flex items-center gap-1.5 ${
+                    className={`px-3.5 py-1.5 rounded-full transition text-xs font-semibold truncate max-w-[160px] flex items-center gap-1.5 ${
                       selectedOrderId === o.id
                         ? "bg-white text-[#1D1D1F] shadow-xs"
                         : "text-[#86868B] hover:text-[#1D1D1F]"
@@ -900,7 +900,7 @@ export default function DashboardClient({ initialData }: Props) {
                             type="button"
                             onClick={() => handleCreateReorderProposal(selectedOrder?.id, currentMissingDays)}
                             disabled={isPending}
-                            className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                            className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-5 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
                           >
                             <Plus className="w-4 h-4" />
                             {isPending
@@ -1034,7 +1034,7 @@ export default function DashboardClient({ initialData }: Props) {
                                       type="button"
                                       onClick={() => handleApprove(b.id)}
                                       disabled={isPending}
-                                      className="bg-[#1D1D1F] hover:bg-black text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
+                                      className="bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-[11px] px-3.5 py-1 rounded-full transition shadow-xs"
                                     >
                                       Approve
                                     </button>
@@ -1042,7 +1042,7 @@ export default function DashboardClient({ initialData }: Props) {
                                       type="button"
                                       onClick={() => handleReject(b.id)}
                                       disabled={isPending}
-                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                      className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
                                     >
                                       Reject
                                     </button>
@@ -1162,7 +1162,7 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleApprove(b.id)}
                                 disabled={isPending}
-                                className="bg-[#1D1D1F] hover:bg-black text-white font-medium text-[11px] px-3 py-1 rounded-md transition shadow-xs"
+                                className="bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-[11px] px-3.5 py-1 rounded-full transition shadow-xs"
                               >
                                 Approve
                               </button>
@@ -1170,7 +1170,7 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleReject(b.id)}
                                 disabled={isPending}
-                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-2.5 py-1 rounded-md transition"
+                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
                               >
                                 Reject
                               </button>
@@ -1338,7 +1338,7 @@ export default function DashboardClient({ initialData }: Props) {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition shadow-xs inline-flex items-center gap-2"
+                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-6 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2"
                   >
                     <Link2 className="w-4 h-4" />
                     {isPending ? "Creating..." : "Create Access Link"}
