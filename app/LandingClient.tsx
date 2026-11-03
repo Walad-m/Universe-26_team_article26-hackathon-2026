@@ -9,14 +9,11 @@ import {
   Clock,
   BarChart3,
   ExternalLink,
-  Users,
   ChevronRight,
-  FolderKanban,
-  FileCheck,
-  Layers,
-  Sparkles,
 } from "lucide-react";
 import { quickLoginAsLead } from "@/app/actions/auth";
+import { useLanguage } from "@/app/context/LanguageContext";
+import LanguageToggle from "@/app/components/LanguageToggle";
 
 interface Props {
   currentUser?: {
@@ -29,6 +26,7 @@ interface Props {
 
 export default function LandingClient({ currentUser }: Props) {
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   const handleQuickLeadLogin = () => {
     startTransition(async () => {
@@ -50,18 +48,20 @@ export default function LandingClient({ currentUser }: Props) {
                 Orvix
               </span>
               <span className="text-[10px] text-[#86868B] block leading-none font-medium mt-0.5">
-                Enterprise Order Governance
+                {t.brandSubtitle}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageToggle />
+
             {currentUser ? (
               <Link
                 href="/dashboard"
                 className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-2 rounded-full transition inline-flex items-center gap-1.5 shadow-xs"
               >
-                <span>Go to Dashboard</span>
+                <span>{t.dashboard}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
@@ -70,15 +70,15 @@ export default function LandingClient({ currentUser }: Props) {
                   href="/login"
                   className="text-xs font-medium text-[#1D1D1F] hover:text-[#0071E3] px-3 py-2 transition"
                 >
-                  Sign In
+                  {t.signIn}
                 </Link>
                 <button
                   type="button"
                   onClick={handleQuickLeadLogin}
                   disabled={isPending}
-                  className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-2 rounded-full transition inline-flex items-center gap-1.5 shadow-xs"
+                  className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-2 rounded-full transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  <span>{isPending ? "Connecting..." : "Live Demo"}</span>
+                  <span>{isPending ? t.connecting : t.liveDemo}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </>
@@ -88,22 +88,21 @@ export default function LandingClient({ currentUser }: Props) {
       </header>
 
       {/* 2. Hero Section (Apple.com Hero Pattern) */}
-      <section className="max-w-5xl mx-auto px-6 pt-16 pb-12 sm:pt-24 sm:pb-16 text-center space-y-6">
+      <section className="max-w-5xl mx-auto px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.03)] text-xs font-semibold text-[#1D1D1F]">
           <span className="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse" />
-          <span>Article26 Hackathon 2026 · Team Orvix</span>
+          <span>{t.heroBadge}</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-[#1D1D1F] max-w-3xl mx-auto leading-[1.1]">
-          Every hour you buy,{" "}
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-[#1D1D1F] max-w-3xl mx-auto leading-[1.08]">
+          {t.heroHeadline1}
           <span className="bg-gradient-to-r from-[#0071E3] via-[#4387F6] to-[#0071E3] bg-clip-text text-transparent">
-            in plain view.
+            {t.heroHeadline2}
           </span>
         </h1>
 
         <p className="text-base sm:text-lg text-[#86868B] max-w-2xl mx-auto font-normal leading-relaxed">
-          The smart time booking and budget runway radar for German enterprises buying project work from outside service providers.
-          No more guessing how long budget will last.
+          {t.heroSub}
         </p>
 
         {/* Hero CTA Dual-Pill Architecture (Apple Duo Pattern) */}
@@ -112,113 +111,33 @@ export default function LandingClient({ currentUser }: Props) {
             type="button"
             onClick={handleQuickLeadLogin}
             disabled={isPending}
-            className="w-full sm:w-auto bg-[#0071E3] hover:bg-[#0077ED] text-white text-sm font-semibold px-7 py-3 rounded-full transition shadow-xs inline-flex items-center justify-center gap-2"
+            className="w-full sm:w-auto bg-[#0071E3] hover:bg-[#0077ED] text-white text-sm font-semibold px-7 py-3 rounded-full transition shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>{isPending ? "Launching..." : "Launch Project Lead Dashboard"}</span>
+            <span>{isPending ? t.connecting : t.launchDashboard}</span>
             <ChevronRight className="w-4 h-4 text-white/80" />
           </button>
 
           <Link
-            href="/portal/contractor-portal-2026"
+            href="/login"
             className="w-full sm:w-auto border border-[#0071E3] text-[#0071E3] hover:bg-[#0071E3]/5 text-sm font-semibold px-7 py-3 rounded-full transition inline-flex items-center justify-center gap-2"
           >
-            <Users className="w-4 h-4 text-[#0071E3]" />
-            <span>Open Contractor Workspace</span>
+            <span>{t.signIn}</span>
           </Link>
         </div>
 
         <p className="text-xs text-[#86868B] font-medium pt-1">
-          Zero installation required · Preloaded with challenge scenario data
+          {t.zeroInstall}
         </p>
       </section>
 
-      {/* 3. Live Juror Preset Box (Apple Bento Grid) */}
-      <section className="max-w-5xl mx-auto px-6 pb-16 w-full">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.04)] space-y-6">
-          <div className="flex items-center justify-between border-b border-black/[0.06] pb-4">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#0071E3]">
-                Evaluation & Jury Access
-              </span>
-              <h2 className="text-lg font-bold text-[#1D1D1F] mt-0.5">
-                Two Sides of the Same Hour
-              </h2>
-            </div>
-            <span className="text-xs font-semibold px-3 py-1 bg-black/[0.04] text-[#1D1D1F] rounded-full">
-              Instant 1-Click Access
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Lead Side */}
-            <div className="p-6 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] flex flex-col justify-between space-y-5">
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-[#1D1D1F] text-white flex items-center justify-center text-xs font-bold">
-                    DE
-                  </div>
-                  <span className="text-xs font-bold text-[#1D1D1F]">
-                    Client Enterprise (Deutsche Enterprise AG)
-                  </span>
-                </div>
-                <p className="text-xs text-[#86868B] leading-relaxed">
-                  Steer budgets, configure hourly rates (€/h), monitor 4-week reorder radar with holiday adjustments, and review contractor deliverables.
-                </p>
-                <div className="text-[11px] font-mono text-[#86868B] bg-white p-2.5 rounded-xl border border-black/[0.04]">
-                  Account: lead@client.de · Role: Project Lead
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleQuickLeadLogin}
-                disabled={isPending}
-                className="w-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold py-2.5 px-4 rounded-full transition shadow-xs inline-flex items-center justify-center gap-2"
-              >
-                <span>Enter as Project Lead</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Contractor Side */}
-            <div className="p-6 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] flex flex-col justify-between space-y-5">
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-[#0071E3] text-white flex items-center justify-center text-xs font-bold">
-                    AG
-                  </div>
-                  <span className="text-xs font-bold text-[#1D1D1F]">
-                    External Service Provider (Agency Alpha)
-                  </span>
-                </div>
-                <p className="text-xs text-[#86868B] leading-relaxed">
-                  External developers sign in via shared link, book flexible daily hours (3.5h, 4h, 8h) under ArbZG legal limits, and request budget extensions.
-                </p>
-                <div className="text-[11px] font-mono text-[#86868B] bg-white p-2.5 rounded-xl border border-black/[0.04]">
-                  Invite Token: contractor-portal-2026 · Contract PO-4500012345
-                </div>
-              </div>
-
-              <Link
-                href="/portal/contractor-portal-2026"
-                className="w-full bg-white hover:bg-black/[0.02] text-[#0071E3] border border-[#0071E3] text-xs font-semibold py-2.5 px-4 rounded-full transition shadow-xs inline-flex items-center justify-center gap-2"
-              >
-                <span>Enter External Contractor Portal</span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#0071E3]" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Core Innovation Features (Apple Bento Cards) */}
+      {/* 3. Core Innovation Features (Apple Bento Cards) */}
       <section className="max-w-5xl mx-auto px-6 pb-20 w-full space-y-8">
         <div className="text-center space-y-2 max-w-xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1D1D1F] tracking-tight">
-            Built for what German enterprises actually need
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
+            {t.builtForNeedTitle}
           </h2>
           <p className="text-xs sm:text-sm text-[#86868B]">
-            Every feature directly targets the pain points outlined in the hackathon challenge brief.
+            {t.builtForNeedSub}
           </p>
         </div>
 
@@ -229,10 +148,10 @@ export default function LandingClient({ currentUser }: Props) {
               <Clock className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-[#1D1D1F]">
-              4-Week Early Warning Radar
+              {t.feature1Title}
             </h3>
             <p className="text-xs text-[#86868B] leading-relaxed">
-              Purchasing takes 4 weeks to approve follow-up purchase orders. Orvix calculates exact exhaustion weeks considering holiday breaks and triggers reorders well before work stops.
+              {t.feature1Desc}
             </p>
           </div>
 
@@ -242,10 +161,10 @@ export default function LandingClient({ currentUser }: Props) {
               <BarChart3 className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-[#1D1D1F]">
-              Multi-Metric Clarity (Money, Days & Hours)
+              {t.feature2Title}
             </h3>
             <p className="text-xs text-[#86868B] leading-relaxed">
-              Executives track Euros (€); contracts specify person-days; specialists deliver flexible hours. Orvix presents all three simultaneously with Money leading on top.
+              {t.feature2Desc}
             </p>
           </div>
 
@@ -255,10 +174,10 @@ export default function LandingClient({ currentUser }: Props) {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-[#1D1D1F]">
-              German Working Time Compliance (ArbZG § 3)
+              {t.feature3Title}
             </h3>
             <p className="text-xs text-[#86868B] leading-relaxed">
-              Enforces statutory 10.0h daily working limits server-side while supporting realistic flexible hours (e.g., 3.5h, 4h, 7.5h). Rejects non-compliant bookings automatically.
+              {t.feature3Desc}
             </p>
           </div>
 
@@ -268,18 +187,18 @@ export default function LandingClient({ currentUser }: Props) {
               <Zap className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-[#1D1D1F]">
-              Bidirectional Budget Extensions
+              {t.feature4Title}
             </h3>
             <p className="text-xs text-[#86868B] leading-relaxed">
-              When deliverables grow, external contractors can submit a budget extension request with reason directly from their portal. The Project Lead reviews and approves it in 1 click.
+              {t.feature4Desc}
             </p>
           </div>
         </div>
       </section>
 
-      {/* 5. Clean Footer */}
+      {/* 4. Clean Footer */}
       <footer className="border-t border-black/[0.06] bg-white mt-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#86868B]">
+        <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#86868B]">
           <div className="flex items-center gap-2">
             <span className="font-bold text-[#1D1D1F]">Orvix</span>
             <span>·</span>
@@ -288,10 +207,7 @@ export default function LandingClient({ currentUser }: Props) {
 
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <Link href="/login" className="hover:text-[#0071E3] transition">
-              Sign In
-            </Link>
-            <Link href="/portal/contractor-portal-2026" className="hover:text-[#0071E3] transition">
-              Contractor Portal
+              {t.signIn}
             </Link>
             <a
               href="https://github.com/Walad-m/Universe-26_team_article26-hackathon-2026"

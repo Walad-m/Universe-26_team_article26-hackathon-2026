@@ -36,7 +36,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 }
 
 /**
- * Authenticates user credentials and establishes a session cookie
+ * Authenticates user credentials and establishes a secure session cookie
+ * Strictly routes users based on their role:
+ * - External Consultant -> Portal (/portal/contractor-portal-2026)
+ * - Project Lead / Purchasing -> Management Cockpit (/dashboard)
  */
 export async function loginUser(
   email: string,
@@ -74,15 +77,35 @@ export async function loginUser(
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
-  const redirectUrl = "/dashboard";
+  const redirectUrl = user.role === "consultant" ? "/portal/contractor-portal-2026" : "/dashboard";
   return { success: true, redirectUrl };
 }
 
 /**
- * 1-Click Juror / Evaluator fast login as Project Lead
+ * 1-Click Juror / Evaluator fast login as Client Project Lead
  */
 export async function quickLoginAsLead() {
   const result = await loginUser("lead@client.de", "password");
+  if (result.success && result.redirectUrl) {
+    redirect(result.redirectUrl);
+  }
+}
+
+/**
+ * 1-Click Juror / Evaluator fast login as Client Purchasing Officer
+ */
+export async function quickLoginAsPurchasing() {
+  const result = await loginUser("purchasing@client.de", "password");
+  if (result.success && result.redirectUrl) {
+    redirect(result.redirectUrl);
+  }
+}
+
+/**
+ * 1-Click Juror / Evaluator fast login as External Consultant Specialist
+ */
+export async function quickLoginAsConsultant() {
+  const result = await loginUser("alex@agencyalpha.de", "password");
   if (result.success && result.redirectUrl) {
     redirect(result.redirectUrl);
   }
@@ -154,7 +177,7 @@ export async function registerOrganizationUser(data: {
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  const redirectUrl = role === "consultant" ? "/consultant" : role === "purchasing" ? "/purchasing" : "/lead";
+  const redirectUrl = role === "consultant" ? "/portal/contractor-portal-2026" : "/dashboard";
   return { success: true, redirectUrl };
 }
 
