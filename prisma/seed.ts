@@ -3,16 +3,16 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding Orvix database...");
+  console.log("Resetting and seeding Orvix realistic challenge baseline (Clean Slate)...");
 
-  // 1. Clean existing records
+  // 1. Clean existing records completely
   await prisma.booking.deleteMany();
   await prisma.orderAssignment.deleteMany();
   await prisma.purchaseOrder.deleteMany();
   await prisma.user.deleteMany();
   await prisma.company.deleteMany();
 
-  // 2. Create Companies
+  // 2. Create Companies (Client Enterprise & External Supplier Agency)
   const clientCompany = await prisma.company.create({
     data: {
       name: "Deutsche Enterprise AG",
@@ -27,14 +27,7 @@ async function main() {
     },
   });
 
-  const supplierBeta = await prisma.company.create({
-    data: {
-      name: "Consulting Beta GmbH",
-      type: "supplier",
-    },
-  });
-
-  // 3. Create Demo Users (Password: password)
+  // 3. Create Demo Users (All with standard password: "password")
   const leadUser = await prisma.user.create({
     data: {
       name: "Klaus Schmidt (Project Lead)",
@@ -55,86 +48,56 @@ async function main() {
     },
   });
 
-  const consultantA = await prisma.user.create({
+  const consultantAlex = await prisma.user.create({
     data: {
       name: "Alex Becker (Consultant Alpha)",
-      email: "consultant@supplier-a.de",
+      email: "alex@agencyalpha.de",
       password: "password",
       role: "consultant",
       companyId: supplierAlpha.id,
     },
   });
 
-  const consultantB = await prisma.user.create({
-    data: {
-      name: "Sophie Wagner (Consultant Beta)",
-      email: "consultant@supplier-b.de",
-      password: "password",
-      role: "consultant",
-      companyId: supplierBeta.id,
-    },
-  });
-
-  // 4. Create Purchase Order (Customer Portal Migration)
-  // Matching the challenge example: 140 Person-Days total budget
+  // 4. Create Baseline Purchase Order from docs/challenge.md
+  // 140 Person-Days total budget @ €100/h = €112,000 total order value
   const order = await prisma.purchaseOrder.create({
     data: {
       orderNumber: "PO-4500012345",
       portalToken: "contractor-portal-2026",
-      title: "Customer Portal Migration",
-      description: "Migration of legacy customer database and frontend reconciliation",
+      title: "Core Banking API Gateway Integration",
+      description: "Integration of modern REST microservices with the core banking transaction ledger",
       totalBudgetDays: 140.0,
+      hourlyRate: 100.0,
       dailyHoursPerDay: 8.0,
       maxDailyHours: 10.0,
       reorderLeadWeeks: 4,
       federalState: "BY",
-      startDate: new Date("2026-07-01"),
+      startDate: new Date("2026-10-01"),
       endDate: new Date("2027-02-15"),
       status: "active",
       companyId: supplierAlpha.id,
     },
   });
 
-  // 5. Assign Consultant Alpha to Order
+  // 5. Assign Consultant to Order
   await prisma.orderAssignment.create({
     data: {
       purchaseOrderId: order.id,
-      userId: consultantA.id,
+      userId: consultantAlex.id,
     },
   });
 
-  // 6. Seed Sample Bookings (84 Person-Days consumed across past weeks)
-  // Let's create representative approved bookings
-  const sampleBookings = [
-    { date: new Date("2026-10-12"), hours: 8.0, description: "Architecture refactoring of auth module" },
-    { date: new Date("2026-10-13"), hours: 8.0, description: "Database schema migration scripts" },
-    { date: new Date("2026-10-14"), hours: 8.0, description: "API gateway integration" },
-    { date: new Date("2026-10-15"), hours: 8.0, description: "Performance benchmarking" },
-    { date: new Date("2026-10-16"), hours: 8.0, description: "Code review and security audit" },
-    { date: new Date("2026-10-19"), hours: 8.0, description: "Legacy CRM data export verification" },
-    { date: new Date("2026-10-20"), hours: 8.0, description: "REST endpoint unit testing" },
-    { date: new Date("2026-10-21"), hours: 8.0, description: "Frontend dashboard components" },
-  ];
+  // 6. Clean Slate: 0 bookings seeded so user and team can log and approve work live from scratch!
 
-  for (const b of sampleBookings) {
-    await prisma.booking.create({
-      data: {
-        purchaseOrderId: order.id,
-        userId: consultantA.id,
-        date: b.date,
-        hours: b.hours,
-        description: b.description,
-        status: "approved",
-      },
-    });
-  }
-
-  console.log("Seeding finished successfully!");
-  console.log("Demo Users created:");
-  console.log(" - Project Lead: lead@client.de / password");
-  console.log(" - Purchasing: purchasing@client.de / password");
-  console.log(" - Consultant A: consultant@supplier-a.de / password");
-  console.log(" - Consultant B: consultant@supplier-b.de / password");
+  console.log("Clean slate database reset completed successfully!");
+  console.log("--------------------------------------------------");
+  console.log("Demo Credentials (Password: password):");
+  console.log(" • Project Lead: lead@client.de (Client Governance & Approvals)");
+  console.log(" • Purchasing:   purchasing@client.de (Commercial Macro Governance)");
+  console.log(" • Consultant:   alex@agencyalpha.de (Agency Alpha Specialist)");
+  console.log("Active Contract: PO-4500012345 (140 Days / €112,000 / 0h logged)");
+  console.log("Contractor Link: /portal/contractor-portal-2026");
+  console.log("--------------------------------------------------");
 }
 
 main()
@@ -145,4 +108,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
