@@ -26,6 +26,8 @@ import {
   ChevronRight,
   FolderKanban,
   Layers,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import {
   createOrderAndGenerateLink,
@@ -37,6 +39,8 @@ import {
 } from "@/app/actions/dashboard";
 import { logoutUser } from "@/app/actions/auth";
 import { HolidayForecastResult } from "@/app/domain/budget";
+import { useLanguage } from "@/app/context/LanguageContext";
+import LanguageToggle from "@/app/components/LanguageToggle";
 
 interface OrderItem {
   id: string;
@@ -80,10 +84,26 @@ interface Props {
 }
 
 export default function DashboardClient({ initialData }: Props) {
+  const { language, t } = useLanguage();
   const [data, setData] = useState(initialData);
   const [activeTab, setActiveTab] = useState<"overview" | "approvals" | "links">("overview");
   const [selectedOrderId, setSelectedOrderId] = useState<string | "all">("all");
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  // Industry-standard locale-aware currency and rate formatting
+  const formatMoney = (amount: number): string => {
+    if (language === "de") {
+      return `${amount.toLocaleString("de-DE")} €`;
+    }
+    return `€${amount.toLocaleString("en-US")}`;
+  };
+
+  const formatRate = (rate: number): string => {
+    if (language === "de") {
+      return `${rate.toLocaleString("de-DE")} €/Std`;
+    }
+    return `€${rate.toLocaleString("en-US")}/h`;
+  };
 
   // Holiday shutdown simulator toggle
   const [includeShutdown, setIncludeShutdown] = useState(true);
@@ -100,7 +120,19 @@ export default function DashboardClient({ initialData }: Props) {
   const [newlyGeneratedUrl, setNewlyGeneratedUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [previewModalImg, setPreviewModalImg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const generateConsistentOrderNumber = (title: string) => {
+    if (!title.trim()) return "PO-45000" + Math.floor(10000 + Math.random() * 90000);
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) {
+      hash = (hash << 5) - hash + title.charCodeAt(i);
+      hash |= 0;
+    }
+    const suffix = Math.abs(hash % 90000) + 10000;
+    return `PO-45000${suffix}`;
+  };
 
   const handleCopy = (token: string, url: string) => {
     navigator.clipboard.writeText(url);
@@ -277,22 +309,31 @@ export default function DashboardClient({ initialData }: Props) {
       <aside className="w-64 lg:w-72 bg-white/95 backdrop-blur-md border-r border-black/[0.06] flex-col justify-between h-screen sticky top-0 shrink-0 z-40 hidden md:flex">
         {/* Brand & Organization */}
         <div>
-          <div className="p-5 lg:p-6 border-b border-black/[0.06]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#1D1D1F] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="font-bold text-sm text-[#1D1D1F] truncate tracking-tight">
-                  {data.currentUser.companyName}
-                </h2>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <p className="text-[10px] font-semibold text-[#86868B] uppercase tracking-wider">
-                    Client Organization
+          <div className="p-5 lg:p-6 border-b border-black/[0.06] space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {/* Sleek Obsidian Squircle with Stylized Geometric O Brandmark */}
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#1D1D1F] to-[#2C2C2E] text-white flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.14)] border border-white/10 shrink-0">
+                  <span className="font-bold text-base tracking-tight font-sans">O</span>
+                </div>
+                <div>
+                  <h1 className="font-bold text-sm text-[#1D1D1F] tracking-tight leading-tight">
+                    Orvix
+                  </h1>
+                  <p className="text-[10px] text-[#86868B] font-medium tracking-wide">
+                    {language === "de" ? "Bestell-Cockpit" : "Order Cockpit"}
                   </p>
                 </div>
               </div>
+              <LanguageToggle />
+            </div>
+
+            {/* Tenant / Client Organization Pill */}
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+              <p className="text-[11px] font-semibold text-[#1D1D1F] truncate">
+                {data.currentUser.companyName}
+              </p>
             </div>
           </div>
 
@@ -316,7 +357,7 @@ export default function DashboardClient({ initialData }: Props) {
             >
               <div className="flex items-center gap-2.5">
                 <LayoutDashboard className={`w-4 h-4 ${activeTab === "overview" ? "text-white" : "text-[#86868B]"}`} />
-                <span>Budget & Forecast</span>
+                <span>{t.tabsOverview}</span>
               </div>
             </button>
 
@@ -332,7 +373,7 @@ export default function DashboardClient({ initialData }: Props) {
             >
               <div className="flex items-center gap-2.5">
                 <FileCheck className={`w-4 h-4 ${activeTab === "approvals" ? "text-white" : "text-[#86868B]"}`} />
-                <span>Review Work Logs</span>
+                <span>{t.tabsApprovals}</span>
               </div>
               {pendingBookingsCount > 0 && (
                 <span
@@ -359,7 +400,7 @@ export default function DashboardClient({ initialData }: Props) {
             >
               <div className="flex items-center gap-2.5">
                 <Link2 className={`w-4 h-4 ${activeTab === "links" ? "text-white" : "text-[#86868B]"}`} />
-                <span>Contractor Access Links</span>
+                <span>{t.tabsLinks}</span>
               </div>
               <span
                 className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
@@ -435,7 +476,9 @@ export default function DashboardClient({ initialData }: Props) {
                   {data.currentUser.name}
                 </p>
                 <p className="text-[10px] text-[#86868B] font-medium truncate capitalize">
-                  Project Lead
+                  {data.currentUser.role === "purchasing" 
+                    ? (language === "de" ? "Einkaufsleiter" : "Purchasing Officer")
+                    : (language === "de" ? "Projektleiter" : "Project Lead")}
                 </p>
               </div>
             </div>
@@ -443,8 +486,8 @@ export default function DashboardClient({ initialData }: Props) {
             <form action={logoutUser}>
               <button
                 type="submit"
-                title="Sign Out"
-                className="text-[#86868B] hover:text-rose-600 p-1.5 rounded-lg hover:bg-white transition"
+                title={t.signOut}
+                className="text-[#86868B] hover:text-rose-600 p-2 rounded-xl hover:bg-white transition cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -458,17 +501,23 @@ export default function DashboardClient({ initialData }: Props) {
         {/* Mobile Navigation Header */}
         <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-black/[0.06] px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#1D1D1F] text-white flex items-center justify-center font-bold text-xs">
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#1D1D1F] to-[#2C2C2E] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                O
               </div>
-              <span className="font-bold text-xs text-[#1D1D1F] truncate">{data.currentUser.companyName}</span>
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-[#1D1D1F] tracking-tight block">Orvix</span>
+                <span className="text-[10px] text-[#86868B] block truncate leading-none">{data.currentUser.companyName}</span>
+              </div>
             </div>
-            <form action={logoutUser}>
-              <button type="submit" title="Sign Out" className="text-xs text-[#86868B] hover:text-[#1D1D1F] p-1">
-                <LogOut className="w-4 h-4" />
-              </button>
-            </form>
+            <div className="flex items-center gap-2">
+              <LanguageToggle />
+              <form action={logoutUser}>
+                <button type="submit" title={t.signOut} className="text-xs text-[#86868B] hover:text-rose-600 p-1.5 rounded-lg hover:bg-[#F5F5F7] transition cursor-pointer">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-1 bg-[#F5F5F7] p-1 rounded-xl text-[11px] font-medium">
@@ -479,7 +528,7 @@ export default function DashboardClient({ initialData }: Props) {
                 activeTab === "overview" ? "bg-white text-[#1D1D1F] font-semibold shadow-xs" : "text-[#86868B]"
               }`}
             >
-              Budget
+              {t.tabsOverview}
             </button>
             <button
               type="button"
@@ -488,7 +537,7 @@ export default function DashboardClient({ initialData }: Props) {
                 activeTab === "approvals" ? "bg-white text-[#1D1D1F] font-semibold shadow-xs" : "text-[#86868B]"
               }`}
             >
-              Reviews {pendingBookingsCount > 0 ? `(${pendingBookingsCount})` : ""}
+              {t.reviewsCount} {pendingBookingsCount > 0 ? `(${pendingBookingsCount})` : ""}
             </button>
             <button
               type="button"
@@ -514,22 +563,22 @@ export default function DashboardClient({ initialData }: Props) {
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] hover:text-[#0077ED] mb-2 bg-white px-3.5 py-1.5 rounded-full border border-black/[0.08] shadow-xs transition"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Back to All Projects Overview</span>
+                  <span>{t.backToOverview}</span>
                 </button>
               )}
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1D1D1F]">
-                {activeTab === "overview" && (selectedOrder ? selectedOrder.title : "Budget & Forecast")}
-                {activeTab === "approvals" && "Review Work Logs"}
-                {activeTab === "links" && "Contractor Access Links"}
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F]">
+                {activeTab === "overview" && (selectedOrder ? selectedOrder.title : t.tabsOverview)}
+                {activeTab === "approvals" && t.tabsApprovals}
+                {activeTab === "links" && t.tabsLinks}
               </h1>
               <p className="text-xs text-[#86868B] font-medium mt-1">
                 {activeTab === "overview" &&
                   (selectedOrder
-                    ? `Contract ${selectedOrder.orderNumber} · ${selectedOrder.supplierName} · Agreed rate €${selectedOrder.hourlyRate}/h`
-                    : `Tracking burn pace and holiday-adjusted forecast across ${data.orders.length} external contracts`)}
-                {activeTab === "approvals" && "Verify contractor daily deliverable hours and approve budget extensions"}
-                {activeTab === "links" && `Create secure workspace access links with configurable hourly rates (€/h)`}
+                    ? `Contract ${selectedOrder.orderNumber} · ${selectedOrder.supplierName} · ${t.rate} €${selectedOrder.hourlyRate}/h`
+                    : t.dashboardSubOverview)}
+                {activeTab === "approvals" && t.dashboardSubApprovals}
+                {activeTab === "links" && t.dashboardSubLinks}
               </p>
             </div>
 
@@ -600,18 +649,18 @@ export default function DashboardClient({ initialData }: Props) {
                   {/* Card 1: Agreed Budget */}
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                      <span>Agreed Budget</span>
+                      <span>{t.kpiTotalBudget}</span>
                       <span className="text-[10px] bg-black/[0.04] px-2 py-0.5 rounded-md font-semibold text-[#1D1D1F]">
-                        {selectedOrder ? `€${selectedOrder.hourlyRate}/h rate` : `${data.orders.length} Active Contracts`}
+                        {selectedOrder ? `${formatRate(selectedOrder.hourlyRate)}` : `${data.orders.length} ${language === "de" ? "Verträge" : "Contracts"}`}
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                        €{(selectedOrder ? selectedOrder.totalMoney : data.metrics.totalBudgetMoney).toLocaleString()}
+                      <div className="text-3xl font-bold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        {formatMoney(selectedOrder ? selectedOrder.totalMoney : data.metrics.totalBudgetMoney)}
                       </div>
                       <p className="text-xs text-[#86868B] font-medium mt-1">
-                        {selectedOrder ? selectedOrder.totalBudgetDays : data.metrics.totalBudgetDays} Days ·{" "}
-                        {(selectedOrder ? selectedOrder.totalHours : data.metrics.totalBudgetHours).toLocaleString()} Hours
+                        {selectedOrder ? selectedOrder.totalBudgetDays : data.metrics.totalBudgetDays} {t.days} ·{" "}
+                        {(selectedOrder ? selectedOrder.totalHours : data.metrics.totalBudgetHours).toLocaleString()} {t.hours}
                       </p>
                     </div>
                   </div>
@@ -619,18 +668,18 @@ export default function DashboardClient({ initialData }: Props) {
                   {/* Card 2: Work Completed */}
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                      <span>Work Completed</span>
+                      <span>{t.kpiWorkCompleted}</span>
                       <span className="text-[10px] bg-black/[0.04] text-[#1D1D1F] px-2 py-0.5 rounded-md font-semibold">
-                        {selectedOrder ? `${selectedOrder.usedHours}h Logged` : `${data.metrics.totalBookedHours}h Logged`}
+                        {selectedOrder ? `${selectedOrder.usedHours}h ${t.logged}` : `${data.metrics.totalBookedHours}h ${t.logged}`}
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                        €{(selectedOrder ? selectedOrder.usedMoney : data.metrics.totalBookedMoney).toLocaleString()}
+                      <div className="text-3xl font-bold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        {formatMoney(selectedOrder ? selectedOrder.usedMoney : data.metrics.totalBookedMoney)}
                       </div>
                       <p className="text-xs text-[#86868B] font-medium mt-1">
-                        {selectedOrder ? selectedOrder.bookedDays : data.metrics.totalBookedDays} Days ·{" "}
-                        {(selectedOrder ? selectedOrder.usedHours : data.metrics.totalBookedHours).toLocaleString()} Hours spent
+                        {selectedOrder ? selectedOrder.bookedDays : data.metrics.totalBookedDays} {t.days} ·{" "}
+                        {(selectedOrder ? selectedOrder.usedHours : data.metrics.totalBookedHours).toLocaleString()} {t.hoursSpent}
                       </p>
                     </div>
                   </div>
@@ -638,18 +687,18 @@ export default function DashboardClient({ initialData }: Props) {
                   {/* Card 3: Budget Remaining */}
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                      <span>Budget Remaining</span>
+                      <span>{t.kpiBudgetRemaining}</span>
                       <span className="text-[10px] bg-black/[0.04] text-[#1D1D1F] px-2 py-0.5 rounded-md font-semibold">
-                        Available
+                        {t.available}
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
-                        €{(selectedOrder ? selectedOrder.leftMoney : data.metrics.remainingBudgetMoney).toLocaleString()}
+                      <div className="text-3xl font-bold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                        {formatMoney(selectedOrder ? selectedOrder.leftMoney : data.metrics.remainingBudgetMoney)}
                       </div>
                       <p className="text-xs text-[#86868B] font-medium mt-1">
-                        {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days ·{" "}
-                        {(selectedOrder ? selectedOrder.leftHours : data.metrics.remainingBudgetHours).toLocaleString()} Hours left
+                        {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} {t.days} ·{" "}
+                        {(selectedOrder ? selectedOrder.leftHours : data.metrics.remainingBudgetHours).toLocaleString()} {t.hoursLeft}
                       </p>
                     </div>
                   </div>
@@ -657,7 +706,7 @@ export default function DashboardClient({ initialData }: Props) {
                   {/* Card 4: When Budget Runs Out */}
                   <div className="bg-white rounded-2xl p-5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div className="flex items-center justify-between text-xs text-[#86868B] font-medium">
-                      <span>When Budget Runs Out</span>
+                      <span>{t.kpiWhenBudgetRunsOut}</span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
                           (selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
@@ -666,20 +715,20 @@ export default function DashboardClient({ initialData }: Props) {
                         }`}
                       >
                         {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
-                          ? `Order More by Wk ${selectedOrder ? selectedOrder.forecast.reorderDeadlineWeek : data.metrics.forecast.reorderDeadlineWeek}`
-                          : "Runway Healthy"}
+                          ? `${t.orderMoreBy} ${selectedOrder ? selectedOrder.forecast.reorderDeadlineWeek : data.metrics.forecast.reorderDeadlineWeek}`
+                          : t.runwayHealthy}
                       </span>
                     </div>
                     <div className="mt-3">
-                      <div className="text-3xl font-extrabold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
+                      <div className="text-3xl font-bold tracking-tight text-[#1D1D1F] font-mono tabular-nums">
                         {includeShutdown
-                          ? `Week ${selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek}`
-                          : `Week ${Math.max(1, (selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek) - 1)}`}
+                          ? `${t.week} ${selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek}`
+                          : `${t.week} ${Math.max(1, (selectedOrder ? selectedOrder.forecast.exhaustionWeek : data.metrics.forecast.exhaustionWeek) - 1)}`}
                       </div>
                       <p className="text-xs font-medium text-[#86868B] mt-1">
                         {(selectedOrder ? selectedOrder.hasShortfall : data.metrics.forecast.missingPersonDays > 0)
-                          ? "Mid-December 2026"
-                          : "Fully Funded until completion"}
+                          ? t.midDecember
+                          : t.fullyFunded}
                       </p>
                     </div>
                   </div>
@@ -704,18 +753,26 @@ export default function DashboardClient({ initialData }: Props) {
                     </p>
                   </div>
 
-                  {/* Holiday Toggle */}
-                  <div className="flex items-center gap-3 bg-[#F5F5F7] p-2 px-3.5 rounded-xl border border-black/[0.04]">
-                    <label htmlFor="shutdown-toggle" className="text-xs font-semibold text-[#1D1D1F] cursor-pointer">
-                      December Holiday Break (Dec 24 – Jan 6)
-                    </label>
-                    <input
-                      id="shutdown-toggle"
-                      type="checkbox"
-                      checked={includeShutdown}
-                      onChange={(e) => setIncludeShutdown(e.target.checked)}
-                      className="w-4 h-4 accent-[#0071E3] rounded cursor-pointer"
-                    />
+                  {/* Apple-Style Smooth Pill Switch for Holiday Simulator */}
+                  <div className="flex items-center gap-3 bg-[#F5F5F7] py-1.5 px-3.5 rounded-2xl border border-black/[0.04]">
+                    <span className="text-xs font-semibold text-[#1D1D1F]">
+                      {language === "de" ? "Weihnachtspause einberechnen (24. Dez – 6. Jan)" : "December Holiday Break (Dec 24 – Jan 6)"}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={includeShutdown}
+                      onClick={() => setIncludeShutdown(!includeShutdown)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        includeShutdown ? "bg-[#0071E3]" : "bg-black/[0.15]"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          includeShutdown ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
 
@@ -734,47 +791,47 @@ export default function DashboardClient({ initialData }: Props) {
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-1.5">
-                          <span className="text-xs font-medium text-[#86868B]">Contractor Working Pace</span>
+                          <span className="text-xs font-medium text-[#86868B]">{language === "de" ? "Dienstleister-Arbeitstempo" : "Contractor Working Pace"}</span>
                           <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                            €{(currentBurnRate * 8 * currentRate).toLocaleString()}{" "}
-                            <span className="text-xs font-normal text-[#86868B]">/ week</span>
+                            {formatMoney(currentBurnRate * 8 * currentRate)}{" "}
+                            <span className="text-xs font-normal text-[#86868B]">/ {language === "de" ? "Woche" : "week"}</span>
                           </p>
                           <p className="text-[11px] text-[#86868B]">
-                            {currentBurnRate} Days · {currentBurnRate * 8} Hours / week
+                            {currentBurnRate} {t.days} · {currentBurnRate * 8} {t.hours} / {language === "de" ? "Woche" : "week"}
                           </p>
                         </div>
 
                         <div className="space-y-1.5">
-                          <span className="text-xs font-medium text-[#86868B]">Predicted Date Money Runs Out</span>
+                          <span className="text-xs font-medium text-[#86868B]">{language === "de" ? "Prognostizierter Budget-Erschöpfungszeitpunkt" : "Predicted Date Money Runs Out"}</span>
                           <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                            {includeShutdown ? `Week ${currentExhaustion}` : `Week ${Math.max(1, currentExhaustion - 1)}`}{" "}
-                            <span className="text-xs font-normal text-[#86868B]">{currentHasShortfall ? "(mid-Dec 2026)" : "(Funded)"}</span>
+                            {includeShutdown ? `${t.week} ${currentExhaustion}` : `${t.week} ${Math.max(1, currentExhaustion - 1)}`}{" "}
+                            <span className="text-xs font-normal text-[#86868B]">{currentHasShortfall ? `(${t.midDecember})` : `(${t.fullyFunded})`}</span>
                           </p>
                           <p className="text-[11px] text-[#86868B]">
                             {includeShutdown
-                              ? "Includes the 2-week Christmas shutdown when no work is billed"
-                              : "Direct pace calculation without holiday break"}
+                              ? (language === "de" ? "Inklusive 2-wöchiger Weihnachtspause ohne Rechnungsstellung" : "Includes the 2-week Christmas shutdown when no work is billed")
+                              : (language === "de" ? "Direkte lineare Berechnung ohne Feiertagspause" : "Direct pace calculation without holiday break")}
                           </p>
                         </div>
 
                         <div className="space-y-1.5">
                           <span className="text-xs font-medium text-[#86868B]">
-                            {currentHasShortfall ? "Shortage until Project Ends (Feb 2027)" : "Budget Status"}
+                            {currentHasShortfall ? (language === "de" ? "Fehlbetrag bis Projektende" : "Shortage until Project Ends") : (language === "de" ? "Budgetstatus" : "Budget Status")}
                           </span>
                           {currentHasShortfall ? (
                             <>
-                              <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">
-                                €{currentMissingMoney.toLocaleString()} Extra Needed
+                              <p className="text-2xl font-bold text-amber-900 font-mono tabular-nums">
+                                {formatMoney(currentMissingMoney)} {language === "de" ? "fehlen" : "Extra Needed"}
                               </p>
                               <p className="text-[11px] text-[#86868B]">
-                                ≈ {currentMissingDays} Days · {currentMissingHours} Hours shortage
+                                ≈ {currentMissingDays} {t.days} · {currentMissingHours} {t.hours} {language === "de" ? "Fehlbestand" : "shortage"}
                               </p>
                             </>
                           ) : (
                             <>
-                              <p className="text-2xl font-bold text-[#1D1D1F] font-mono tabular-nums">Fully Funded</p>
+                              <p className="text-2xl font-bold text-emerald-800 font-mono tabular-nums">{t.fullyFunded}</p>
                               <p className="text-[11px] text-[#86868B]">
-                                €0 Extra Needed · {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} Days available
+                                {formatMoney(0)} {language === "de" ? "Nachbestellung erforderlich" : "Extra Needed"} · {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} {t.days} {t.available}
                               </p>
                             </>
                           )}
@@ -787,11 +844,16 @@ export default function DashboardClient({ initialData }: Props) {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                               <Clock className="w-4 h-4 text-amber-600" />
-                              <span>4-Week Early Warning: Must request more budget by Week {currentReorderDeadline}</span>
+                              <span>
+                                {language === "de" 
+                                  ? `4-Wochen-Frühwarnung: Nachbestellung erforderlich bis KW ${currentReorderDeadline}` 
+                                  : `4-Week Early Warning: Must request more budget by Week ${currentReorderDeadline}`}
+                              </span>
                             </div>
                             <p className="text-xs text-amber-800">
-                              Purchasing takes 4 weeks to approve paperwork. You must request extra budget before Week{" "}
-                              {currentReorderDeadline} so contractors do not stop working.
+                              {language === "de"
+                                ? `Der Einkauf benötigt 4 Wochen Vorlaufzeit für Folgebestellungen. Um Stillstand zu vermeiden, muss die Bestellung vor KW ${currentReorderDeadline} initiiert werden.`
+                                : `Purchasing takes 4 weeks to approve paperwork. You must request extra budget before Week ${currentReorderDeadline} so contractors do not stop working.`}
                             </p>
                           </div>
 
@@ -799,12 +861,12 @@ export default function DashboardClient({ initialData }: Props) {
                             type="button"
                             onClick={() => handleCreateReorderProposal(selectedOrder?.id, currentMissingDays)}
                             disabled={isPending}
-                            className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-5 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                            className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-5 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
                           >
                             <Plus className="w-4 h-4" />
                             {isPending
-                              ? "Submitting..."
-                              : `Submit Purchasing Reorder (+€${currentMissingMoney.toLocaleString()})`}
+                              ? t.connecting
+                              : `${language === "de" ? "Folgebestellung an Einkauf melden" : "Submit Purchasing Reorder"} (+${formatMoney(currentMissingMoney)})`}
                           </button>
                         </div>
                       ) : (
@@ -812,16 +874,19 @@ export default function DashboardClient({ initialData }: Props) {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
                               <Check className="w-4 h-4 text-emerald-600" />
-                              <span>Budget Runway Healthy: No Shortage Detected</span>
+                              <span>{language === "de" ? "Budget-Reichweite solide: Kein Fehlbetrag prognostiziert" : "Budget Runway Healthy: No Shortage Detected"}</span>
                             </div>
                             <p className="text-xs text-emerald-800">
-                              Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not
-                              needed at this time.
+                              {language === "de"
+                                ? "Das vereinbarte Budget deckt alle geplanten Meilensteine bei aktuellem Arbeitstempo vollständig ab."
+                                : "Current budget covers all planned milestones at current pace. Purchasing reorder paperwork is not needed at this time."}
                             </p>
                           </div>
-                          <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full shrink-0 flex items-center gap-1.5">
-                            <Check className="w-3.5 h-3.5 text-emerald-600" /> Runway Healthy
-                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs font-semibold px-3.5 py-1.5 bg-white text-emerald-800 border border-emerald-200/60 rounded-full shadow-xs">
+                              {selectedOrder ? selectedOrder.remainingDays : data.metrics.remainingBudgetDays} {t.days} {t.available}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </>
@@ -836,14 +901,14 @@ export default function DashboardClient({ initialData }: Props) {
                     <div>
                       <h2 className="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
                         <FolderKanban className="w-4 h-4 text-[#0071E3]" />
-                        Active Project Contracts
+                        {t.allProjectsOverview}
                       </h2>
                       <p className="text-xs text-[#86868B] mt-0.5">
-                        Click on any project box below to open its dedicated forecast, early warning radar, and work logs
+                        {t.allProjectsSub}
                       </p>
                     </div>
                     <span className="text-xs font-semibold bg-white border border-black/[0.06] px-3 py-1 rounded-full text-[#1D1D1F]">
-                      {data.orders.length} Contracts
+                      {data.orders.length} {t.days}
                     </span>
                   </div>
 
@@ -872,12 +937,12 @@ export default function DashboardClient({ initialData }: Props) {
                             {o.hasShortfall ? (
                               <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
                                 <Clock className="w-3 h-3 text-amber-600" />
-                                Reorder by Wk {o.forecast.reorderDeadlineWeek}
+                                {t.orderMoreBy} {o.forecast.reorderDeadlineWeek}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-1 rounded-full text-[11px] shrink-0">
                                 <Check className="w-3 h-3 text-emerald-600" />
-                                Runway Healthy
+                                {t.runwayHealthy}
                               </span>
                             )}
                           </div>
@@ -885,29 +950,29 @@ export default function DashboardClient({ initialData }: Props) {
                           {/* Metric Numbers: Money on Top, Days on Bottom */}
                           <div className="grid grid-cols-3 gap-3 py-2 border-y border-black/[0.04] text-xs">
                             <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Total Budget</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.totalMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.totalBudgetDays} Days · {o.totalHours}h</span>
+                              <span className="text-[10px] text-[#86868B] font-medium block">{t.kpiTotalBudget}</span>
+                              <span className="font-bold text-[#1D1D1F] font-mono text-sm block">{formatMoney(o.totalMoney)}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.totalBudgetDays} {t.days} · {o.totalHours}h</span>
                             </div>
 
                             <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Work Logged</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.usedMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.bookedDays} Days · {o.usedHours}h</span>
+                              <span className="text-[10px] text-[#86868B] font-medium block">{t.kpiWorkCompleted}</span>
+                              <span className="font-bold text-[#1D1D1F] font-mono text-sm block">{formatMoney(o.usedMoney)}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.bookedDays} {t.days} · {o.usedHours}h</span>
                             </div>
 
                             <div>
-                              <span className="text-[10px] text-[#86868B] font-medium block">Remaining</span>
-                              <span className="font-extrabold text-[#1D1D1F] font-mono text-sm block">€{o.leftMoney.toLocaleString()}</span>
-                              <span className="text-[10px] text-[#86868B] block">{o.remainingDays} Days · {o.leftHours}h</span>
+                              <span className="text-[10px] text-[#86868B] font-medium block">{t.kpiBudgetRemaining}</span>
+                              <span className="font-bold text-[#1D1D1F] font-mono text-sm block">{formatMoney(o.leftMoney)}</span>
+                              <span className="text-[10px] text-[#86868B] block">{o.remainingDays} {t.days} · {o.leftHours}h</span>
                             </div>
                           </div>
 
                           {/* Progress Bar & Footer */}
                           <div>
                             <div className="flex items-center justify-between text-[11px] text-[#86868B] mb-1.5">
-                              <span>Budget Usage: {percentUsed}%</span>
-                              <span>Agreed Rate: €{o.hourlyRate}/h</span>
+                              <span>{t.schedule}: {o.startDate || "Immediate"} → {o.endDate || "Ongoing"}</span>
+                              <span>{formatRate(o.hourlyRate)} · {percentUsed}% {t.used}</span>
                             </div>
                             <div className="w-full bg-[#F5F5F7] h-2 rounded-full overflow-hidden">
                               <div
@@ -920,7 +985,7 @@ export default function DashboardClient({ initialData }: Props) {
                           </div>
 
                           <div className="pt-1 flex items-center justify-between text-xs text-[#0071E3] font-semibold group-hover:underline">
-                            <span>Open Project Cockpit & Radar</span>
+                            <span>{t.openCockpit}</span>
                             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </div>
                         </div>
@@ -937,14 +1002,16 @@ export default function DashboardClient({ initialData }: Props) {
                     <div>
                       <h3 className="font-bold text-[#1D1D1F] text-base flex items-center gap-2">
                         <FileCheck className="w-4 h-4 text-[#0071E3]" />
-                        Work Logs for {selectedOrder.title}
+                        {language === "de" ? `Stundennachweise für ${selectedOrder.title}` : `Work Logs for ${selectedOrder.title}`}
                       </h3>
                       <p className="text-xs text-[#86868B] mt-0.5">
-                        Deliverable history submitted by {selectedOrder.supplierName} under PO {selectedOrder.orderNumber}
+                        {language === "de" 
+                          ? `Eingereichte Leistungen von ${selectedOrder.supplierName} unter Bestell-Nr. ${selectedOrder.orderNumber}`
+                          : `Deliverable history submitted by ${selectedOrder.supplierName} under PO ${selectedOrder.orderNumber}`}
                       </p>
                     </div>
                     <span className="text-xs font-semibold bg-black/[0.05] text-[#1D1D1F] px-3 py-1 rounded-full">
-                      {filteredBookings.length} Submissions
+                      {filteredBookings.length} {language === "de" ? "Einträge" : "Submissions"}
                     </span>
                   </div>
 
@@ -952,19 +1019,31 @@ export default function DashboardClient({ initialData }: Props) {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-[#F5F5F7] text-[#86868B] font-semibold border-b border-black/[0.06]">
                         <tr>
-                          <th className="py-3.5 px-5">Date</th>
-                          <th className="py-3.5 px-5">Specialist Name</th>
-                          <th className="py-3.5 px-5 text-right">Deliverable Value & Time</th>
-                          <th className="py-3.5 px-5">What Was Delivered</th>
-                          <th className="py-3.5 px-5">Status</th>
-                          <th className="py-3.5 px-5 text-center">Action</th>
+                          <th className="py-3.5 px-5">{t.dateCol}</th>
+                          <th className="py-3.5 px-5">{t.specialistCol}</th>
+                          <th className="py-3.5 px-5 text-right">{t.deliverableValCol}</th>
+                          <th className="py-3.5 px-5">{t.whatWasBuiltCol}</th>
+                          <th className="py-3.5 px-5">{t.statusCol}</th>
+                          <th className="py-3.5 px-5 text-center">{t.actionCol}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-black/[0.04]">
                         {filteredBookings.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-8 text-center text-[#86868B]">
-                              No work logs submitted yet for this contract. Share the contractor access link to start logging deliverables.
+                            <td colSpan={6} className="py-12 text-center">
+                              <div className="flex flex-col items-center justify-center gap-2.5 max-w-sm mx-auto text-center">
+                                <div className="w-10 h-10 rounded-2xl bg-black/[0.03] text-[#86868B] flex items-center justify-center">
+                                  <FileCheck className="w-5 h-5 text-[#86868B]" />
+                                </div>
+                                <p className="text-xs font-semibold text-[#1D1D1F]">
+                                  {language === "de" ? "Noch keine Stundennachweise eingereicht" : "No Work Logs Submitted Yet"}
+                                </p>
+                                <p className="text-[11px] text-[#86868B] leading-relaxed">
+                                  {language === "de" 
+                                    ? "Für diese Bestellung liegen noch keine Einträge vor. Teilen Sie den Zugangslink mit dem Dienstleister." 
+                                    : "No deliverables reported yet. Share the contractor access link to start receiving submissions."}
+                                </p>
+                              </div>
                             </td>
                           </tr>
                         ) : (
@@ -973,10 +1052,22 @@ export default function DashboardClient({ initialData }: Props) {
                               <td className="py-3.5 px-5 font-mono text-[#86868B]">{b.date}</td>
                               <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.consultantName}</td>
                               <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
-                                <div className="font-semibold text-xs">€{b.moneyEur.toLocaleString()}</div>
-                                <div className="text-[10px] text-[#86868B]">{b.personDays} Days · {b.hours}h</div>
+                                <div className="font-semibold text-xs">{formatMoney(b.moneyEur)}</div>
+                                <div className="text-[10px] text-[#86868B]">{b.personDays} {t.days} · {b.hours}h</div>
                               </td>
-                              <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
+                              <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">
+                                <div>{b.description}</div>
+                                {b.attachmentUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewModalImg(b.attachmentUrl || null)}
+                                    className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0071E3] hover:underline bg-blue-50/80 px-2.5 py-1 rounded-lg border border-blue-100 cursor-pointer"
+                                  >
+                                    <ImageIcon className="w-3.5 h-3.5" />
+                                    <span>Proof Attached</span>
+                                  </button>
+                                )}
+                              </td>
                               <td className="py-3.5 px-5">
                                 {b.status === "approved" && (
                                   <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
@@ -1068,29 +1159,38 @@ export default function DashboardClient({ initialData }: Props) {
               <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-[#1D1D1F]">
-                    Review & Approve Work Logs
+                    {t.reviewLogsHeader}
                   </h2>
                   <p className="text-xs text-[#86868B] mt-0.5">
-                    Check work submitted by external contractors before invoices are paid
+                    {t.reviewLogsSub}
                   </p>
                 </div>
                 <span className="text-xs font-semibold bg-black/[0.05] text-[#1D1D1F] px-3 py-1 rounded-full">
-                  {data.bookings.length} Total Submissions
+                  {data.bookings.length} {t.totalSubmissions}
                 </span>
               </div>
+
+              {data.currentUser.role === "purchasing" && (
+                <div className="p-4 bg-amber-50/80 border-b border-amber-200/60 text-xs text-amber-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>{language === "de" ? "Datenschutz aktiv:" : "Commercial Privacy Active:"}</strong> {t.commercialPrivacy}
+                  </span>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#F5F5F7] text-[#86868B] font-semibold border-b border-black/[0.06]">
                     <tr>
-                      <th className="py-3.5 px-5">Date</th>
-                      <th className="py-3.5 px-5">Contract Number</th>
-                      <th className="py-3.5 px-5">Company</th>
-                      <th className="py-3.5 px-5">Specialist Name</th>
-                      <th className="py-3.5 px-5 text-right">Deliverable Value & Time</th>
-                      <th className="py-3.5 px-5">What Was Built</th>
-                      <th className="py-3.5 px-5">Status</th>
-                      <th className="py-3.5 px-5 text-center">Action</th>
+                      <th className="py-3.5 px-5">{t.dateCol}</th>
+                      <th className="py-3.5 px-5">{t.contractCol}</th>
+                      <th className="py-3.5 px-5">{t.companyCol}</th>
+                      <th className="py-3.5 px-5">{t.specialistCol}</th>
+                      <th className="py-3.5 px-5 text-right">{t.deliverableValCol}</th>
+                      <th className="py-3.5 px-5">{t.whatWasBuiltCol}</th>
+                      <th className="py-3.5 px-5">{t.statusCol}</th>
+                      <th className="py-3.5 px-5 text-center">{t.actionCol}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-black/[0.04]">
@@ -1104,56 +1204,72 @@ export default function DashboardClient({ initialData }: Props) {
                         <td className="py-3.5 px-5 font-semibold text-[#1D1D1F]">{b.supplierName}</td>
                         <td className="py-3.5 px-5 text-[#86868B]">{b.consultantName}</td>
                         <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
-                          <div className="font-semibold text-xs">€{b.moneyEur.toLocaleString()}</div>
-                          <div className="text-[10px] text-[#86868B]">{b.personDays} Days · {b.hours}h</div>
+                          <div className="font-semibold text-xs">{formatMoney(b.moneyEur)}</div>
+                          <div className="text-[10px] text-[#86868B]">{b.personDays} {t.days} · {b.hours}h</div>
                         </td>
-                        <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">{b.description}</td>
+                        <td className="py-3.5 px-5 text-[#1D1D1F] max-w-xs">
+                          <div>{b.description}</div>
+                          {b.attachmentUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalImg(b.attachmentUrl || null)}
+                              className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0071E3] hover:underline bg-blue-50/80 px-2.5 py-1 rounded-lg border border-blue-100 cursor-pointer"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>{t.proofAttached}</span>
+                            </button>
+                          )}
+                        </td>
                         <td className="py-3.5 px-5">
                           {b.status === "approved" && (
                             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
                               <Check className="w-3 h-3 text-emerald-600" />
-                              Approved
+                              {t.approved}
                             </span>
                           )}
                           {b.status === "submitted" && (
                             <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0071E3] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
                               <Clock className="w-3 h-3 text-[#0071E3]" />
-                              Needs Review
+                              {t.needsReview}
                             </span>
                           )}
                           {b.status === "extension_requested" && (
                             <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full text-[11px]">
                               <Zap className="w-3 h-3 text-amber-600" />
-                              Extension Requested
+                              {t.extensionRequested}
                             </span>
                           )}
                           {b.status === "rejected" && (
                             <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 font-semibold px-2.5 py-0.5 rounded-full text-[11px]" title={b.rejectionReason || ""}>
                               <AlertCircle className="w-3 h-3 text-rose-600" />
-                              Rejected
+                              {t.rejected}
                             </span>
                           )}
                         </td>
                         <td className="py-3.5 px-5 text-center">
-                          {b.status === "extension_requested" ? (
+                          {data.currentUser.role === "purchasing" ? (
+                            <span className="text-[10px] text-[#86868B] bg-black/[0.04] px-2.5 py-1 rounded-full font-medium">
+                              {t.leadApprovalRequired}
+                            </span>
+                          ) : b.status === "extension_requested" ? (
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => handleApprove(b.id)}
                                 disabled={isPending}
-                                className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3.5 py-1 rounded-full transition shadow-xs flex items-center gap-1"
+                                className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] px-3.5 py-1 rounded-full transition shadow-xs flex items-center gap-1 cursor-pointer"
                                 title="Approves extension and adds hours directly to contract budget"
                               >
                                 <Check className="w-3 h-3" />
-                                Approve +{b.hours}h
+                                {t.approve} +{b.hours}h
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleReject(b.id)}
                                 disabled={isPending}
-                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
+                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition cursor-pointer"
                               >
-                                Reject
+                                {t.reject}
                               </button>
                             </div>
                           ) : b.status === "submitted" ? (
@@ -1162,21 +1278,21 @@ export default function DashboardClient({ initialData }: Props) {
                                 type="button"
                                 onClick={() => handleApprove(b.id)}
                                 disabled={isPending}
-                                className="bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-[11px] px-3.5 py-1 rounded-full transition shadow-xs"
+                                className="bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-[11px] px-3.5 py-1 rounded-full transition shadow-xs cursor-pointer"
                               >
-                                Approve
+                                {t.approve}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleReject(b.id)}
                                 disabled={isPending}
-                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition"
+                                className="text-rose-600 hover:bg-rose-50 border border-rose-200/60 font-medium text-[11px] px-3 py-1 rounded-full transition cursor-pointer"
                               >
-                                Reject
+                                {t.reject}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-[#86868B]">Completed</span>
+                            <span className="text-[11px] text-[#86868B]">{t.completed}</span>
                           )}
                         </td>
                       </tr>
@@ -1194,10 +1310,10 @@ export default function DashboardClient({ initialData }: Props) {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
                 <div>
                   <h2 className="text-lg font-bold text-[#1D1D1F]">
-                    Create Access Link for External Contractor
+                    {t.onboardHeader}
                   </h2>
                   <p className="text-xs text-[#86868B] mt-0.5">
-                    Create a unique invite link so your external partner can log in and submit their work
+                    {t.onboardSub}
                   </p>
                 </div>
 
@@ -1205,7 +1321,7 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="p-4 bg-black/[0.02] border border-black/[0.08] rounded-2xl space-y-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-[#1D1D1F]">
                       <Check className="w-4 h-4 text-[#1D1D1F]" />
-                      <span>Link created! Send this link to the external partner:</span>
+                      <span>{language === "de" ? "Link erfolgreich erstellt! Bitte an Dienstleister übermitteln:" : "Link created! Send this link to the external partner:"}</span>
                     </div>
                     <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-black/[0.08]">
                       <input
@@ -1220,7 +1336,7 @@ export default function DashboardClient({ initialData }: Props) {
                         className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-1.5 rounded-full shrink-0 transition inline-flex items-center gap-1"
                       >
                         {copiedToken === "new" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        {copiedToken === "new" ? "Copied" : "Copy Link"}
+                        {copiedToken === "new" ? t.copied : t.copy}
                       </button>
                     </div>
                   </div>
@@ -1230,7 +1346,7 @@ export default function DashboardClient({ initialData }: Props) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        External Company Name
+                        {t.externalCompany}
                       </label>
                       <input
                         type="text"
@@ -1244,37 +1360,52 @@ export default function DashboardClient({ initialData }: Props) {
 
                     <div>
                       <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        Project Name / Scope
+                        {t.projectName}
                       </label>
                       <input
                         type="text"
                         value={projectName}
-                        onChange={(e) => setProjectName(e.target.value)}
-                        placeholder="e.g. Hostel for student"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setProjectName(val);
+                          if (!orderNumber || orderNumber.startsWith("PO-45000")) {
+                            setOrderNumber(generateConsistentOrderNumber(val));
+                          }
+                        }}
+                        placeholder="e.g. Student Housing Portal"
                         required
                         className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        Contract / Order Number
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-medium text-[#1D1D1F]">
+                          {t.orderNumber}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setOrderNumber(generateConsistentOrderNumber(projectName))}
+                          className="text-[10px] text-[#0071E3] hover:underline font-semibold cursor-pointer"
+                        >
+                          {t.autoGenerate}
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={orderNumber}
                         onChange={(e) => setOrderNumber(e.target.value)}
                         placeholder="e.g. PO-4500012345"
                         required
-                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none font-mono font-semibold"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        Agreed Budget (Days)
+                        {t.budgetDays}
                       </label>
                       <input
                         type="number"
@@ -1287,13 +1418,13 @@ export default function DashboardClient({ initialData }: Props) {
                         className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
                       <span className="text-[10px] text-[#86868B] mt-1 block">
-                        1 Day = 8 hours
+                        1 {t.days.replace(/e$/, "")} = 8 {t.hours}
                       </span>
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        Agreed Hourly Rate (€/h)
+                        {t.hourlyRate}
                       </label>
                       <input
                         type="number"
@@ -1310,10 +1441,28 @@ export default function DashboardClient({ initialData }: Props) {
                         Standard German IT: €100/h
                       </span>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
+                        {t.startDate}
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        required
+                        className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
+                      />
+                      <span className="text-[10px] text-[#86868B] mt-1 block">
+                        {language === "de" ? "Abrechnung ab diesem Datum zulässig" : "Contract work deliverables are eligible starting on this date"}
+                      </span>
+                    </div>
 
                     <div>
                       <label className="block text-xs font-medium text-[#1D1D1F] mb-1.5">
-                        Target Finish Date
+                        {t.finishDate}
                       </label>
                       <input
                         type="date"
@@ -1321,16 +1470,19 @@ export default function DashboardClient({ initialData }: Props) {
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full text-xs bg-[#F5F5F7] border border-black/[0.08] rounded-xl p-3 text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3] focus:bg-white focus:outline-none"
                       />
+                      <span className="text-[10px] text-[#86868B] mt-1 block">
+                        {language === "de" ? "Vereinbarte Meilenstein-Fertigstellung" : "Agreed milestone completion deadline"}
+                      </span>
                     </div>
                   </div>
 
                   {/* Real-time total contract money & hours calculation */}
                   <div className="p-3.5 bg-black/[0.03] rounded-2xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-black/[0.04]">
-                    <span className="text-[#86868B] font-medium">Computed Total Contract Value:</span>
+                    <span className="text-[#86868B] font-medium">{t.computedValue}:</span>
                     <span className="font-bold text-[#1D1D1F] font-mono">
-                      €{((Number(budgetDays) || 0) * 8 * (Number(hourlyRate) || 100)).toLocaleString()}{" "}
+                      {formatMoney((Number(budgetDays) || 0) * 8 * (Number(hourlyRate) || 100))}{" "}
                       <span className="font-normal text-[#86868B]">
-                        ({budgetDays || 0} Days · {(Number(budgetDays) || 0) * 8} Hours at €{hourlyRate || 100}/h)
+                        ({budgetDays || 0} {t.days} · {(Number(budgetDays) || 0) * 8} {t.hours} à {formatRate(Number(hourlyRate) || 100)})
                       </span>
                     </span>
                   </div>
@@ -1338,10 +1490,10 @@ export default function DashboardClient({ initialData }: Props) {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-6 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2"
+                    className="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-6 py-2.5 rounded-full transition shadow-xs inline-flex items-center gap-2 cursor-pointer"
                   >
                     <Link2 className="w-4 h-4" />
-                    {isPending ? "Creating..." : "Create Access Link"}
+                    {isPending ? t.connecting : t.createLinkButton}
                   </button>
                 </form>
               </div>
@@ -1351,14 +1503,14 @@ export default function DashboardClient({ initialData }: Props) {
                 <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-bold text-[#1D1D1F]">
-                      Active Contractor Links & Contracts
+                      {t.activeLinksHeader}
                     </h2>
                     <p className="text-xs text-[#86868B] mt-0.5">
-                      External developers use these links to log in and report their daily work
+                      {t.activeLinksSub}
                     </p>
                   </div>
                   <span className="text-xs font-semibold bg-black/[0.05] text-[#1D1D1F] px-3 py-1 rounded-full">
-                    {data.orders.length} Active Contracts
+                    {data.orders.length} {language === "de" ? "Aktive Verträge" : "Active Contracts"}
                   </span>
                 </div>
 
@@ -1366,12 +1518,12 @@ export default function DashboardClient({ initialData }: Props) {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#F5F5F7] text-[#86868B] font-semibold border-b border-black/[0.06]">
                       <tr>
-                        <th className="py-3.5 px-5">Contract Number</th>
-                        <th className="py-3.5 px-5">External Company</th>
-                        <th className="py-3.5 px-5">Project Name</th>
-                        <th className="py-3.5 px-5 text-right">Agreed Budget</th>
-                        <th className="py-3.5 px-5 text-right">Used / Left</th>
-                        <th className="py-3.5 px-5">Access Link to Share</th>
+                        <th className="py-3.5 px-5">{t.contractCol}</th>
+                        <th className="py-3.5 px-5">{t.externalCompany}</th>
+                        <th className="py-3.5 px-5">{t.projectName}</th>
+                        <th className="py-3.5 px-5 text-right">{t.budgetDays}</th>
+                        <th className="py-3.5 px-5 text-right">{t.used} / {t.available}</th>
+                        <th className="py-3.5 px-5">{language === "de" ? "Zugangslink zum Teilen" : "Access Link to Share"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/[0.04]">
@@ -1400,12 +1552,12 @@ export default function DashboardClient({ initialData }: Props) {
                               </button>
                             </td>
                             <td className="py-3.5 px-5 text-right font-mono text-[#1D1D1F]">
-                              <div className="font-semibold text-xs">€{o.totalMoney.toLocaleString()}</div>
-                              <div className="text-[10px] text-[#86868B]">{o.totalBudgetDays} Days</div>
+                              <div className="font-semibold text-xs">{formatMoney(o.totalMoney)}</div>
+                              <div className="text-[10px] text-[#86868B]">{o.totalBudgetDays} {t.days}</div>
                             </td>
                             <td className="py-3.5 px-5 text-right font-mono text-xs">
-                              <div className="font-semibold text-[#1D1D1F]">€{o.usedMoney.toLocaleString()} / €{o.leftMoney.toLocaleString()}</div>
-                              <div className="text-[10px] text-[#86868B]">{o.bookedDays} Days / {o.remainingDays} Days</div>
+                              <div className="font-semibold text-[#1D1D1F]">{formatMoney(o.usedMoney)} / {formatMoney(o.leftMoney)}</div>
+                              <div className="text-[10px] text-[#86868B]">{o.bookedDays} {t.days} / {o.remainingDays} {t.days}</div>
                             </td>
                             <td className="py-3.5 px-5">
                               <div className="flex items-center gap-2">
@@ -1415,10 +1567,10 @@ export default function DashboardClient({ initialData }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => handleCopy(o.id, url)}
-                                  className="text-[11px] font-medium bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] border border-black/[0.08] px-3 py-1 rounded-full transition inline-flex items-center gap-1 shrink-0"
+                                  className="text-[11px] font-medium bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] border border-black/[0.08] px-3 py-1 rounded-full transition inline-flex items-center gap-1 shrink-0 cursor-pointer"
                                 >
                                   {copiedToken === o.id ? <Check className="w-3 h-3 text-[#0071E3]" /> : <Copy className="w-3 h-3 text-[#86868B]" />}
-                                  {copiedToken === o.id ? "Copied" : "Copy"}
+                                  {copiedToken === o.id ? t.copied : t.copy}
                                 </button>
                               </div>
                             </td>
@@ -1433,6 +1585,55 @@ export default function DashboardClient({ initialData }: Props) {
           )}
         </main>
       </div>
+
+      {/* Proof of Work Attachment Lightbox Modal */}
+      {previewModalImg && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewModalImg(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-[#0071E3]" />
+                <h3 className="font-bold text-sm text-[#1D1D1F]">
+                  {t.proofModalTitle}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewModalImg(null)}
+                className="text-[#86868B] hover:text-[#1D1D1F] p-1 rounded-full hover:bg-black/[0.05] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-auto flex items-center justify-center rounded-2xl bg-black/[0.02] border border-black/[0.04] p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewModalImg}
+                alt="Deliverable Proof"
+                className="max-h-[65vh] w-auto max-w-full rounded-xl object-contain shadow-xs"
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-[#86868B] pt-2">
+              <span>{t.proofModalSub}</span>
+              <button
+                type="button"
+                onClick={() => setPreviewModalImg(null)}
+                className="px-4 py-1.5 rounded-full bg-[#1D1D1F] text-white font-medium hover:bg-black transition text-xs cursor-pointer"
+              >
+                {t.closePreview}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

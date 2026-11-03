@@ -12,6 +12,11 @@ import {
   validateCumulativeDailyHours,
   validateBookingBudget,
 } from "@/app/domain/budget";
+import {
+  canBookTime,
+  canAccessContractorPortal,
+  filterBookingsForContractor,
+} from "@/app/domain/permissions";
 
 const SESSION_COOKIE_NAME = "orvix_session";
 
@@ -32,17 +37,23 @@ export interface PortalOrderData {
   remainingDays: number;
   bookings: Array<{
     id: string;
+    userId: string;
     date: string;
     hours: number;
     personDays: number;
     description: string;
+    attachmentUrl?: string | null;
     consultantName: string;
     status: "submitted" | "approved" | "rejected" | "extension_requested";
     rejectionReason?: string | null;
   }>;
 }
 
-export async function getPortalData(token: string): Promise<PortalOrderData | null> {
+/**
+ * Fetches order portal data with strict contractor peer isolation
+ * (Each consultant ONLY sees their own bookings, never peer contractor work)
+ */
+export async function getPortalData(token: string, sessionUserId?: string): Promise<PortalOrderData | null> {
   const order = await prisma.purchaseOrder.findUnique({
     where: { portalToken: token },
     include: {
@@ -58,8 +69,29 @@ export async function getPortalData(token: string): Promise<PortalOrderData | nu
     return null;
   }
 
+  // Macro budget consumption is computed across all approved/submitted bookings for the contract
   const consumedDays = calculateConsumedBudget(order.bookings, order.dailyHoursPerDay);
   const remainingDays = calculateRemainingBudget(order.totalBudgetDays, consumedDays);
+
+  const rawBookings = order.bookings.map((b) => ({
+    id: b.id,
+    userId: b.userId,
+    date: b.date.toISOString().split("T")[0],
+    hours: b.hours,
+    personDays: Number((b.hours / order.dailyHoursPerDay).toFixed(2)),
+    description: b.description,
+    attachmentUrl: b.attachmentUrl,
+    consultantName: b.user?.name || "Contractor Specialist",
+    status: b.status as "submitted" | "approved" | "rejected" | "extension_requested",
+    rejectionReason: b.rejectionReason,
+  }));
+
+  // Peer Isolation Rule (docs/roles-and-privacy.md):
+  // External Consultant can ONLY see their own submitted deliverables.
+  // Deliverables from other contractors on this order are strictly filtered out.
+  const ownBookings = sessionUserId
+    ? filterBookingsForContractor(rawBookings, sessionUserId)
+    : [];
 
   return {
     orderId: order.id,
@@ -76,21 +108,13 @@ export async function getPortalData(token: string): Promise<PortalOrderData | nu
     dailyHoursPerDay: order.dailyHoursPerDay,
     consumedDays,
     remainingDays,
-    bookings: order.bookings.map((b: { id: string; date: Date; hours: number; description: string; user: { name: string }; status: string; rejectionReason: string | null }) => ({
-      id: b.id,
-      date: b.date.toISOString().split("T")[0],
-      hours: b.hours,
-      personDays: Number((b.hours / order.dailyHoursPerDay).toFixed(2)),
-      description: b.description,
-      consultantName: b.user?.name || "Contractor Specialist",
-      status: b.status as "submitted" | "approved" | "rejected" | "extension_requested",
-      rejectionReason: b.rejectionReason,
-    })),
+    bookings: ownBookings,
   };
 }
 
 /**
  * Registers an external partner specialist and signs them in to the portal
+ * Strictly enforces contractor-only role and supplier organization isolation
  */
 export async function signupPartnerUser(data: {
   token: string;
@@ -117,16 +141,25 @@ export async function signupPartnerUser(data: {
 
   const existingUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
+    include: { company: true },
   });
 
   let userId: string;
 
   if (existingUser) {
-    // If account already exists with this email, verify it belongs to this supplier or allow linking
+    // 1. RBAC Guard: Client enterprise accounts cannot register as contractors
+    if (existingUser.role !== "consultant") {
+      return {
+        success: false,
+        error: "403 Forbidden: This email belongs to an enterprise client account. Please use your contractor specialist email.",
+      };
+    }
+
+    // 2. Vendor Isolation Guard: Cannot cross between supplier agencies
     if (existingUser.companyId && existingUser.companyId !== order.companyId) {
       return {
         success: false,
-        error: "This email is registered with another organization. Please use your contractor email.",
+        error: `403 Forbidden: Vendor isolation active. This email is registered under ${existingUser.company?.name || "another supplier"}. This link is restricted to ${order.company.name}.`,
       };
     }
 
@@ -197,6 +230,7 @@ export async function signupPartnerUser(data: {
 
 /**
  * Logs in an existing external partner specialist
+ * Strictly enforces contractor-only role and supplier organization isolation
  */
 export async function loginPartnerUser(data: {
   token: string;
@@ -227,6 +261,22 @@ export async function loginPartnerUser(data: {
 
   if (!user || user.password !== password) {
     return { success: false, error: "Invalid credentials. Please verify your email and password." };
+  }
+
+  // 1. RBAC Guard: Client enterprise accounts (Project Lead & Purchasing) CANNOT log into contractor portal
+  if (user.role !== "consultant") {
+    return {
+      success: false,
+      error: "403 Forbidden: Client enterprise accounts (Project Lead & Purchasing) cannot log into the external contractor portal. Please use the management cockpit at /login.",
+    };
+  }
+
+  // 2. Vendor Isolation Guard: Verify the user belongs to this supplier company
+  if (user.companyId && user.companyId !== order.companyId) {
+    return {
+      success: false,
+      error: `403 Forbidden: Vendor isolation active. Your account is registered under ${user.company?.name || "another organization"}. This portal link is strictly restricted to ${order.company.name}.`,
+    };
   }
 
   // Ensure assignment to this order
@@ -288,8 +338,9 @@ export async function submitContractorBooking(data: {
   date: string;
   hours: number;
   description: string;
+  attachmentUrl?: string;
 }) {
-  const { token, date, hours, description } = data;
+  const { token, date, hours, description, attachmentUrl } = data;
 
   if (!token || !date || !hours || !description?.trim()) {
     return { success: false, error: "Please fill in all deliverable details." };
@@ -303,6 +354,7 @@ export async function submitContractorBooking(data: {
   const order = await prisma.purchaseOrder.findUnique({
     where: { portalToken: token },
     include: {
+      company: true,
       bookings: true,
     },
   });
@@ -311,16 +363,35 @@ export async function submitContractorBooking(data: {
     return { success: false, error: "Invalid access token or order not found." };
   }
 
+  // RBAC & Vendor Isolation Guard
+  const accessCheck = canAccessContractorPortal(sessionUser.role, sessionUser.companyId, order.companyId);
+  if (!accessCheck.allowed) {
+    return { success: false, error: accessCheck.error || "403 Forbidden" };
+  }
+
+  if (order.status !== "active") {
+    return { success: false, error: "This purchase order is closed or not active for time booking." };
+  }
+
   // 1. Domain Validation: German Working Time Act (ArbZG) statutory max 10 hours/day
   const arbzgCheck = validateArbZGWorkingHours(hours, order.maxDailyHours);
   if (!arbzgCheck.valid) {
     return { success: false, error: arbzgCheck.error };
   }
 
-  // 2. Domain Validation: Check cumulative daily hours for this user on this date
+  // 2. Domain Validation: Project timeline validation
   const targetDate = new Date(date);
   const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
   const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+
+  const projectStartDate = new Date(order.startDate);
+  projectStartDate.setHours(0, 0, 0, 0);
+  if (startOfDay < projectStartDate) {
+    return {
+      success: false,
+      error: `Booking date (${date}) cannot be before the official project start date (${order.startDate.toISOString().split("T")[0]}).`,
+    };
+  }
 
   const existingBookingsOnDate = await prisma.booking.findMany({
     where: {
@@ -355,6 +426,7 @@ export async function submitContractorBooking(data: {
       date: targetDate,
       hours: Number(hours),
       description: description.trim(),
+      attachmentUrl: attachmentUrl || null,
       status: "submitted",
     },
   });
@@ -390,6 +462,12 @@ export async function requestBudgetExtension(data: {
 
   if (!order) {
     return { success: false, error: "Contract or order not found." };
+  }
+
+  // RBAC & Vendor Isolation Guard
+  const accessCheck = canAccessContractorPortal(sessionUser.role, sessionUser.companyId, order.companyId);
+  if (!accessCheck.allowed) {
+    return { success: false, error: accessCheck.error || "403 Forbidden" };
   }
 
   await prisma.booking.create({

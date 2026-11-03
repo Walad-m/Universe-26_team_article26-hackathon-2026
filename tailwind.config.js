@@ -7,6 +7,40 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"SF Pro"',
+          '"Inter"',
+          '"Segoe UI"',
+          "Roboto",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: [
+          '"SF Mono"',
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          '"Liberation Mono"',
+          '"Courier New"',
+          "monospace",
+        ],
+      },
+      letterSpacing: {
+        tighter: "-0.04em",
+        tight: "-0.022em",
+        normal: "-0.011em",
+        wide: "0.02em",
+        wider: "0.04em",
+        widest: "0.08em",
+      },
       colors: {
         brand: {
           50: "#f0fdf4",

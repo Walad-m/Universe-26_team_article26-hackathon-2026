@@ -9,6 +9,13 @@ import {
   calculateHolidayAdjustedForecast,
   HolidayForecastResult,
 } from "@/app/domain/budget";
+import {
+  canCreatePurchaseOrder,
+  canApproveRejectWork,
+  canCreateReorderProposal,
+  canAccessClientDashboard,
+  sanitizeBookingsForRole,
+} from "@/app/domain/permissions";
 
 export interface BookingDisplayItem {
   id: string;
@@ -21,6 +28,7 @@ export interface BookingDisplayItem {
   personDays: number;
   moneyEur: number;
   description: string;
+  attachmentUrl?: string | null;
   status: "submitted" | "approved" | "rejected" | "extension_requested";
   rejectionReason?: string | null;
 }
@@ -53,6 +61,24 @@ export interface DashboardMetrics {
 export async function getDashboardData() {
   const sessionUser = await getSessionUser();
 
+  // If a consultant tries to access the client dashboard, block them
+  if (sessionUser) {
+    const accessCheck = canAccessClientDashboard(sessionUser.role);
+    if (!accessCheck.allowed) {
+      throw new Error(accessCheck.error || "403 Forbidden");
+    }
+  }
+
+  const effectiveUser = sessionUser || {
+    id: "demo-lead",
+    name: "Klaus Schmidt (Project Lead)",
+    email: "lead@client.de",
+    role: "project_lead",
+    companyId: "client-id",
+    companyName: "Deutsche Enterprise AG",
+    companyType: "client",
+  };
+
   const orders = await prisma.purchaseOrder.findMany({
     include: {
       company: true,
@@ -78,7 +104,7 @@ export async function getDashboardData() {
   let totalBookedMoney = 0;
   let pendingHours = 0;
   const supplierSet = new Set<string>();
-  const allBookings: BookingDisplayItem[] = [];
+  const rawBookings: BookingDisplayItem[] = [];
 
   for (const o of orders) {
     const rate = o.hourlyRate || 100.0;
@@ -100,7 +126,7 @@ export async function getDashboardData() {
         pendingHours += b.hours;
       }
 
-      allBookings.push({
+      rawBookings.push({
         id: b.id,
         orderNumber: o.orderNumber,
         orderTitle: o.title,
@@ -111,11 +137,16 @@ export async function getDashboardData() {
         personDays: Number((b.hours / o.dailyHoursPerDay).toFixed(2)),
         moneyEur: Number((b.hours * rate).toFixed(0)),
         description: b.description,
+        attachmentUrl: b.attachmentUrl,
         status: b.status as "submitted" | "approved" | "rejected" | "extension_requested",
         rejectionReason: b.rejectionReason,
       });
     }
   }
+
+  // Data Privacy Enforcement: Purchasing sees only aggregated values (Σ)
+  // Individual specialist names and work descriptions are redacted for Purchasing (§ 147 AO / DSGVO)
+  const allBookings = sanitizeBookingsForRole(rawBookings, effectiveUser.role);
 
   const totalBookedDays = Number((totalBookedHours / 8.0).toFixed(1));
   const remainingBudgetDays = Number(Math.max(0, totalBudgetDays - totalBookedDays).toFixed(1));
@@ -125,7 +156,6 @@ export async function getDashboardData() {
   const pendingReviewDays = Number((pendingHours / 8.0).toFixed(1));
 
   // Run Holiday & Christmas Shutdown Pace Forecaster
-  // If the primary order has bookings, forecast based on remaining vs project finish line
   const primaryOrder = orders[0];
   const primaryRate = primaryOrder?.hourlyRate || 100.0;
   const primaryConsumed = primaryOrder
@@ -146,7 +176,6 @@ export async function getDashboardData() {
 
   const missingBudgetHours = Math.round(forecast.missingPersonDays * (primaryOrder?.dailyHoursPerDay || 8.0));
   const missingBudgetMoney = Math.round(missingBudgetHours * primaryRate);
-
   const hasShortfall = forecast.missingPersonDays > 0;
 
   const reorderAlert = {
@@ -179,13 +208,7 @@ export async function getDashboardData() {
   };
 
   return {
-    currentUser: sessionUser || {
-      name: "Klaus Schmidt",
-      email: "lead@client.de",
-      role: "project_lead",
-      companyName: "Deutsche Enterprise AG",
-      companyType: "client",
-    },
+    currentUser: effectiveUser,
     metrics,
     orders: orders.map((o) => {
       const rate = o.hourlyRate || 100.0;
@@ -212,7 +235,7 @@ export async function getDashboardData() {
       const orderMissingDays = consumed > 0 ? orderForecast.missingPersonDays : 0;
       const orderMissingHours = Math.round(orderMissingDays * o.dailyHoursPerDay);
       const orderMissingMoney = Math.round(orderMissingHours * rate);
-      const hasShortfall = orderMissingDays > 0;
+      const hasOrderShortfall = orderMissingDays > 0;
 
       return {
         id: o.id,
@@ -238,7 +261,7 @@ export async function getDashboardData() {
           ...orderForecast,
           missingPersonDays: orderMissingDays,
         },
-        hasShortfall,
+        hasShortfall: hasOrderShortfall,
         missingBudgetHours: orderMissingHours,
         missingBudgetMoney: orderMissingMoney,
       };
@@ -247,6 +270,10 @@ export async function getDashboardData() {
   };
 }
 
+/**
+ * Server Action: Create Order & Generate Partner Link
+ * Strictly guarded: Project Lead & Purchasing only
+ */
 export async function createOrderAndGenerateLink(data: {
   externalCompanyName: string;
   projectName: string;
@@ -256,6 +283,12 @@ export async function createOrderAndGenerateLink(data: {
   startDate: string;
   endDate: string;
 }) {
+  const sessionUser = await getSessionUser();
+  const perm = canCreatePurchaseOrder(sessionUser?.role);
+  if (!perm.allowed) {
+    return { success: false, error: perm.error || "403 Forbidden: Insufficient permissions." };
+  }
+
   const { externalCompanyName, projectName, orderNumber, budgetDays, hourlyRate = 100.0, startDate, endDate } = data;
 
   if (!externalCompanyName || !projectName || !orderNumber || !budgetDays) {
@@ -300,16 +333,26 @@ export async function createOrderAndGenerateLink(data: {
   };
 }
 
+/**
+ * Server Action: Approve Booking Proof of Work
+ * Strictly guarded: Project Lead ONLY
+ */
 export async function approveBooking(bookingId: string) {
+  const sessionUser = await getSessionUser();
+  const perm = canApproveRejectWork(sessionUser?.role);
+  if (!perm.allowed) {
+    return { success: false, error: perm.error || "403 Forbidden: Only the Client Project Lead can approve work." };
+  }
+
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: { purchaseOrder: true },
     });
 
-    if (!booking) return { success: false, error: "Booking not found" };
+    if (!booking) return { success: false, error: "Booking not found." };
 
-    // If this was an extension request from contractor, add the hours to the purchase order budget!
+    // If this was an extension request from contractor, add the hours to the purchase order budget
     if (booking.status === "extension_requested") {
       const additionalDays = Number((booking.hours / booking.purchaseOrder.dailyHoursPerDay).toFixed(1));
       await prisma.purchaseOrder.update({
@@ -333,7 +376,17 @@ export async function approveBooking(bookingId: string) {
   }
 }
 
+/**
+ * Server Action: Reject Booking Proof of Work
+ * Strictly guarded: Project Lead ONLY
+ */
 export async function rejectBooking(bookingId: string, reason: string = "Exceeds agreed daily deliverable scope") {
+  const sessionUser = await getSessionUser();
+  const perm = canApproveRejectWork(sessionUser?.role);
+  if (!perm.allowed) {
+    return { success: false, error: perm.error || "403 Forbidden: Only the Client Project Lead can reject work." };
+  }
+
   try {
     await prisma.booking.update({
       where: { id: bookingId },
@@ -347,7 +400,17 @@ export async function rejectBooking(bookingId: string, reason: string = "Exceeds
   }
 }
 
+/**
+ * Server Action: Create Reorder Proposal
+ * Strictly guarded: Project Lead & Purchasing only
+ */
 export async function createReorderProposal(orderId?: string, missingDays: number = 31.0) {
+  const sessionUser = await getSessionUser();
+  const perm = canCreateReorderProposal(sessionUser?.role);
+  if (!perm.allowed) {
+    return { success: false, error: perm.error || "403 Forbidden: Insufficient permissions." };
+  }
+
   try {
     const primaryOrder = orderId
       ? await prisma.purchaseOrder.findUnique({ where: { id: orderId } })

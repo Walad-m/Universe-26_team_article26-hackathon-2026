@@ -2,7 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-11-01
-- **Deciders:** Muhaysin Muqtar, Solomon Azinawo, Barkisu, Mujahid Bello, Habib Abdullahi
+- **Deciders:** Alhassan Mujahid, Iddrisu Barkisu, Muhaysin Muqtar, Azinawo Solomon, Bawah Habib, Mahabub Abdul Fatawu
 
 ## Context
 
